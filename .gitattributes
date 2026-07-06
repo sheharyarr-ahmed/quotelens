@@ -1,0 +1,3 @@
+# schema/quote.schema.json is compared byte-identical by a backend test; keep LF everywhere.
+*.json text eol=lf
+*.sql text eol=lf

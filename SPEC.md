@@ -2,7 +2,9 @@
 
 Cross-platform (iOS + Android) AI quoting app for trades and field-service operators. Walk the job site, capture photos and a spoken narration, and an agent pipeline produces an itemized, evidence-cited estimate the operator reviews and sends before leaving the driveway. Portfolio project. Closes the React Native gap, ships as a published Google Play listing, and reuses the mandatory-citation and self-correcting state machine patterns already proven in the portfolio.
 
-v1.2 of this spec. Changes from v1.1: scoping interview resolved eleven open implementation questions. The pipeline gains a dedicated analyze_photos vision node (seven nodes total), retry behavior in the live-assembly UI is specified as visible retraction, media uploads go direct to Supabase Storage, backend hosting and whisper sizing are pinned for the free-tier deploy, and price book matching, schema-mirror mechanics, realtime transport, API auth, failure state, and the pricing model are all decided below.
+v1.2.1 of this spec. Changes from v1.2: two tooling amendments — the mobile mirror test uses Zod 4's native `z.toJSONSchema()` (the `zod-to-json-schema` package named in v1.2 is unmaintained since Nov 2025), and the web app pins Next.js 16 LTS instead of 15 (Next 15 LTS reaches end of life Oct 2026, inside this project's public lifetime).
+
+Changes from v1.1: scoping interview resolved eleven open implementation questions. The pipeline gains a dedicated analyze_photos vision node (seven nodes total), retry behavior in the live-assembly UI is specified as visible retraction, media uploads go direct to Supabase Storage, backend hosting and whisper sizing are pinned for the free-tier deploy, and price book matching, schema-mirror mechanics, realtime transport, API auth, failure state, and the pricing model are all decided below.
 
 ---
 
@@ -67,7 +69,7 @@ quotelens/
 │   │   ├── services/                  # transcription, claude client, storage, trace writer
 │   │   └── db/                        # Supabase access layer (service role, user-scoped queries)
 │   └── tests/                         # pipeline unit tests incl. forced-retry path, schema artifact test
-├── web/                               # Next.js 15 App Router, client quote page only
+├── web/                               # Next.js 16 App Router, client quote page only
 │   ├── app/q/[shareToken]/page.tsx    # public quote view + Accept action
 │   └── app/api/accept/route.ts
 ├── store/                             # Play Store listing assets
@@ -102,7 +104,7 @@ quotelens/
 ### Quote schema and integrity
 
 - **TypeScript strict on mobile and web, Pydantic v2 on backend, Zod mirrors of the quote schema on the client.**
-- **The schema mirror is proven through a committed JSON Schema artifact at `schema/quote.schema.json`.** A backend test regenerates `model_json_schema()` from the Pydantic quote models and fails if it differs from the committed artifact (drift shows up as a red diff). A mobile test converts the hand-written Zod mirror via zod-to-json-schema and asserts field names, required sets, and enums match the same artifact. Each side runs in its own toolchain, which fits verify.sh's split gates. Alternatives considered: codegen Zod from Pydantic (stronger guarantee, but adds a build step and generated code is awkward to extend with client-only refinements), shared golden fixtures (tests behavior, can silently miss a renamed optional field).
+- **The schema mirror is proven through a committed JSON Schema artifact at `schema/quote.schema.json`.** A backend test regenerates `model_json_schema()` from the Pydantic quote models and fails if it differs from the committed artifact (drift shows up as a red diff). A mobile test converts the hand-written Zod mirror via Zod 4's native `z.toJSONSchema()` and asserts field names, required sets, and enums match the same artifact. Each side runs in its own toolchain, which fits verify.sh's split gates. Alternatives considered: codegen Zod from Pydantic (stronger guarantee, but adds a build step and generated code is awkward to extend with client-only refinements), shared golden fixtures (tests behavior, can silently miss a renamed optional field).
 - **Mandatory photo citations as a schema constraint, not a prompt instruction.** `QuoteLineItem.photo_citations` must be non-empty or validation fails and the retry edge fires. Validate additionally asserts every cited photo ID exists in the analyze_photos observation set. This is the line defended in vetting calls.
 - **Confidence flag is a first-class field.** Any line item derived from inference rather than explicit narration is marked `confidence: "inferred"` and rendered with a visible flag. The model declaring uncertainty is a feature.
 - **Price book items are per-unit: each item carries a unit (sqft, linear_ft, each, flat) and a unit price.** Example: "Interior wall paint, 2 coats, $1.80/sqft". draft_line_items sets quantity from the narration when stated ("the room is 12 by 14") and from vision dimension estimates otherwise, flagging those lines `inferred`. Realistic trade pricing, and quantity inference gives the confidence flag real work in every demo. Alternatives considered: flat task pricing (kills quantity errors but the inferred flag rarely fires and quotes look toy-like), hybrid flat-plus-extras (two pricing semantics in the schema for marginal demo gain).
