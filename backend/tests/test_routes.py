@@ -39,8 +39,9 @@ def test_health():
 
 def test_generate_smoke():
     services = build_services([PARSE_RESPONSE, MATCH_RESPONSE, GOOD_DRAFT_RESPONSE])
+    # "u1" matches the {user_id}/... prefix of the fixture storage paths.
     app.dependency_overrides = {
-        get_current_user_id: lambda: "user-1",
+        get_current_user_id: lambda: "u1",
         get_repo: FakeRepo,
         get_services: lambda: services,
     }

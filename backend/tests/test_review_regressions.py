@@ -94,7 +94,7 @@ def test_generate_rejects_foreign_job():
     from tests.test_routes import FakeRepo
 
     app.dependency_overrides = {
-        get_current_user_id: lambda: "user-1",
+        get_current_user_id: lambda: "u1",
         get_repo: FakeRepo,
         get_services: lambda: services,
     }
@@ -105,6 +105,36 @@ def test_generate_rejects_foreign_job():
             json={"job_id": "someone-elses-job", "audio_path": "a", "photos": []},
         )
         assert response.status_code == 404
+        assert services.events.events == []
+    finally:
+        app.dependency_overrides = {}
+
+
+def test_generate_rejects_foreign_storage_paths():
+    """Client-supplied storage paths are signed via service role inside the
+    pipeline; a path outside the caller's {user_id}/ prefix would exfiltrate
+    another tenant's media through transcript and observations."""
+    services = build_services([])
+    from tests.test_routes import FakeRepo
+
+    app.dependency_overrides = {
+        get_current_user_id: lambda: "u1",
+        get_repo: FakeRepo,
+        get_services: lambda: services,
+    }
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/generate",
+            json={
+                "job_id": "job-1",
+                "audio_path": "u1/j1/narration.m4a",
+                "photos": [
+                    {"photo_id": "photo-1", "storage_path": "u2/x/photo.jpg"}
+                ],
+            },
+        )
+        assert response.status_code == 403
         assert services.events.events == []
     finally:
         app.dependency_overrides = {}

@@ -28,6 +28,10 @@ def register_capture(
     # Service-role access bypasses RLS: assert the job belongs to the user.
     if repo.get_job(user_id, capture.job_id) is None:
         raise HTTPException(status_code=404, detail="job not found")
+    # Storage policies scope uploads to {user_id}/...; registered metadata
+    # must point inside the caller's own prefix.
+    if not capture.storage_path.startswith(f"{user_id}/"):
+        raise HTTPException(status_code=403, detail="storage path not owned")
     return repo.register_capture(
         user_id, capture.job_id, capture.kind, capture.storage_path
     )

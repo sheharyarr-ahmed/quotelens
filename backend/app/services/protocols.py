@@ -42,7 +42,7 @@ class QuoteStore(Protocol):
     def save_completed(self, quote: Quote, retry_count: int) -> None: ...
 
     def mark_failed(
-        self, quote_id: str, errors: list[str], retry_count: int
+        self, quote_id: str, errors: list[str], retry_count: int | None
     ) -> None: ...
 
 

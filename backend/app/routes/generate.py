@@ -29,7 +29,10 @@ def run_pipeline(state: PipelineState, services: Services) -> None:
         # Infrastructure failures (malformed LLM output, network, storage)
         # must not strand the quote in `generating` with a Realtime
         # subscriber waiting forever; surface them like a validation failure.
-        services.quotes.mark_failed(state.quote_id, [str(exc)], state.retry_count)
+        # retry_count=None: the crashed run's true count is unknowable here
+        # (graph state is gone), so the column is left untouched rather than
+        # misreported; the event and traces carry the real story.
+        services.quotes.mark_failed(state.quote_id, [str(exc)], None)
         services.events.emit(
             state.quote_id,
             events.GENERATION_FAILED,
@@ -49,6 +52,14 @@ def generate(
     # asserted here: the job must belong to the verified user.
     if repo.get_job(user_id, body.job_id) is None:
         raise HTTPException(status_code=404, detail="job not found")
+    # Storage paths are client-supplied and later signed via service role;
+    # without this prefix check a user could feed another tenant's media
+    # into their own pipeline and read it back through transcript and
+    # observations. Upload paths are RLS-scoped to {user_id}/... by the
+    # storage policies.
+    paths = [body.audio_path] + [photo.storage_path for photo in body.photos]
+    if not all(path.startswith(f"{user_id}/") for path in paths):
+        raise HTTPException(status_code=403, detail="storage path not owned")
     quote = repo.create_quote(user_id, body.job_id)
     state = PipelineState(
         job_id=body.job_id,

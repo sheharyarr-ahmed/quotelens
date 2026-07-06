@@ -50,8 +50,11 @@ class SupabaseQuoteStore:
         ).eq("id", quote.id).execute()
 
     def mark_failed(
-        self, quote_id: str, errors: list[str], retry_count: int
+        self, quote_id: str, errors: list[str], retry_count: int | None
     ) -> None:
-        self.client.table("quotes").update(
-            {"status": "failed", "retry_count": retry_count}
-        ).eq("id", quote_id).execute()
+        update: dict = {"status": "failed"}
+        # None means the caller cannot know the true count (e.g. the crash
+        # boundary, where graph state is gone): leave the column untouched.
+        if retry_count is not None:
+            update["retry_count"] = retry_count
+        self.client.table("quotes").update(update).eq("id", quote_id).execute()
