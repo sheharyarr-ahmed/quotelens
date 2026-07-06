@@ -1,0 +1,133 @@
+{
+  "$defs": {
+    "QuoteLineItem": {
+      "description": "One priced line of a quote.\n\nphoto_citations is non-empty by schema constraint, not by prompt: an\nuncited line item fails validation and never reaches the UI.",
+      "properties": {
+        "confidence": {
+          "enum": [
+            "stated",
+            "inferred"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "photo_citations": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Photo Citations",
+          "type": "array"
+        },
+        "price_book_item_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price Book Item Id"
+        },
+        "quantity": {
+          "exclusiveMinimum": 0,
+          "title": "Quantity",
+          "type": "number"
+        },
+        "total_cents": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Cents"
+        },
+        "unit": {
+          "enum": [
+            "sqft",
+            "linear_ft",
+            "each",
+            "flat"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "unit_price_cents": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit Price Cents"
+        }
+      },
+      "required": [
+        "description",
+        "quantity",
+        "unit",
+        "photo_citations",
+        "confidence"
+      ],
+      "title": "QuoteLineItem",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "job_id": {
+      "title": "Job Id",
+      "type": "string"
+    },
+    "line_items": {
+      "items": {
+        "$ref": "#/$defs/QuoteLineItem"
+      },
+      "title": "Line Items",
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "generating",
+        "completed",
+        "failed",
+        "sent",
+        "accepted"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "subtotal_cents": {
+      "minimum": 0,
+      "title": "Subtotal Cents",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "job_id",
+    "status",
+    "line_items",
+    "subtotal_cents"
+  ],
+  "title": "Quote",
+  "type": "object"
+}

@@ -1,0 +1,26 @@
+[project]
+name = "quotelens-backend"
+version = "0.1.0"
+description = "QuoteLens agent pipeline and API (FastAPI + LangGraph)"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.116.0",
+    "fastapi>=0.115",
+    "faster-whisper>=1.2",
+    "langgraph>=1.2,<2",
+    "pydantic>=2.13,<2.14",
+    "pyjwt>=2.13.0",
+    "supabase>=2.31.0",
+    "uvicorn>=0.50.1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8",
+    "pytest-asyncio>=1.4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
