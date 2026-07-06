@@ -71,6 +71,18 @@ class InMemoryEventSink:
         return [event_type for _, event_type, _ in self.events]
 
 
+class InMemoryQuoteStore:
+    def __init__(self):
+        self.completed: list[tuple] = []  # (quote, retry_count)
+        self.failed: list[tuple] = []  # (quote_id, errors, retry_count)
+
+    def save_completed(self, quote, retry_count) -> None:
+        self.completed.append((quote, retry_count))
+
+    def mark_failed(self, quote_id, errors, retry_count) -> None:
+        self.failed.append((quote_id, errors, retry_count))
+
+
 class InMemoryTraceWriter:
     def __init__(self):
         self.records: list[dict] = []

@@ -21,6 +21,11 @@ def validate(state: PipelineState, runtime: Runtime[Services]) -> dict:
     observed_ids = {o.photo_id for o in state.observations}
     errors: list[str] = []
 
+    # A degenerate empty draft must not sail through as a completed empty
+    # quote; it is a validation failure like any other.
+    if not state.draft_items:
+        errors.append("draft contains no line items")
+
     for index, item in enumerate(state.draft_items):
         try:
             parsed = QuoteLineItem.model_validate(item)
@@ -59,6 +64,9 @@ def validate(state: PipelineState, runtime: Runtime[Services]) -> dict:
         # Cap exhausted: keep the last draft visible in a failed state;
         # regenerate re-runs from cached transcript and observations.
         update["status"] = "failed"
+        runtime.context.quotes.mark_failed(
+            state.quote_id, errors, state.retry_count
+        )
         runtime.context.events.emit(
             state.quote_id,
             events.GENERATION_FAILED,

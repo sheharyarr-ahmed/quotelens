@@ -7,7 +7,7 @@ ever reaches for the network directly.
 
 from typing import Protocol
 
-from app.pipeline.schemas import TokenUsage, Transcript
+from app.pipeline.schemas import Quote, TokenUsage, Transcript
 
 
 class TranscriptionService(Protocol):
@@ -32,6 +32,18 @@ class StorageService(Protocol):
 
 class EventSink(Protocol):
     def emit(self, quote_id: str, event_type: str, payload: dict) -> None: ...
+
+
+class QuoteStore(Protocol):
+    """Persists pipeline outcomes to quotes/quote_line_items so the failed
+    state stays visible, GET /quotes reflects reality, and device-direct
+    edit sync has rows to operate on."""
+
+    def save_completed(self, quote: Quote, retry_count: int) -> None: ...
+
+    def mark_failed(
+        self, quote_id: str, errors: list[str], retry_count: int
+    ) -> None: ...
 
 
 class TraceWriter(Protocol):

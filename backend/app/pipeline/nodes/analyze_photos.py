@@ -3,6 +3,8 @@ structured observations tagged with photo ids. draft_line_items may only
 cite ids present in this observation set, which makes citations mechanically
 checkable and keeps retries from re-paying vision (SPEC.md - Pipeline)."""
 
+from concurrent.futures import ThreadPoolExecutor
+
 from langgraph.runtime import Runtime
 
 from app import config
@@ -22,16 +24,21 @@ rough dimension estimate only if the photo supports one."""
 
 @traced("analyze_photos")
 def analyze_photos(state: PipelineState, runtime: Runtime[Services]) -> dict:
-    observations: list[PhotoObservation] = []
-    total_in = total_out = 0
-    for photo in state.photos:
+    def analyze_one(photo) -> tuple[PhotoObservation, TokenUsage]:
         url = runtime.context.storage.create_signed_url(photo.storage_path)
         data, usage = runtime.context.llm.analyze_image_json(
             prompt=PROMPT, image_url=url, model=config.vision_model()
         )
-        observations.append(PhotoObservation(photo_id=photo.photo_id, **data))
-        total_in += usage.input_tokens
-        total_out += usage.output_tokens
+        return PhotoObservation(photo_id=photo.photo_id, **data), usage
+
+    # One vision call per photo, in parallel (SPEC.md - Pipeline); map keeps
+    # the observation order aligned with the capture order.
+    with ThreadPoolExecutor(max_workers=min(4, max(1, len(state.photos)))) as pool:
+        analyzed = list(pool.map(analyze_one, state.photos))
+
+    observations = [observation for observation, _ in analyzed]
+    total_in = sum(usage.input_tokens for _, usage in analyzed)
+    total_out = sum(usage.output_tokens for _, usage in analyzed)
     return {
         "observations": observations,
         TOKENS_KEY: TokenUsage(input_tokens=total_in, output_tokens=total_out),

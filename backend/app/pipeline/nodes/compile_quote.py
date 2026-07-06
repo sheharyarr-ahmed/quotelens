@@ -19,6 +19,7 @@ def compile_quote(state: PipelineState, runtime: Runtime[Services]) -> dict:
         line_items=line_items,
         subtotal_cents=subtotal,
     )
+    runtime.context.quotes.save_completed(quote, state.retry_count)
     runtime.context.events.emit(
         state.quote_id,
         events.GENERATION_COMPLETED,

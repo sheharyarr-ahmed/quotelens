@@ -19,6 +19,16 @@ class SupabaseQuoteRepo:
         )
         return result.data[0]
 
+    def get_job(self, user_id: str, job_id: str) -> dict | None:
+        result = (
+            self.client.table("jobs")
+            .select("*")
+            .eq("id", job_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+
     def get_quote(self, user_id: str, quote_id: str) -> dict | None:
         result = (
             self.client.table("quotes")
@@ -50,17 +60,23 @@ class SupabaseQuoteRepo:
     def get_active_price_book_items(self, user_id: str) -> list[PriceBookItem]:
         books = (
             self.client.table("price_books")
-            .select("id")
+            .select("id, user_id, is_template")
             .eq("is_active", True)
             .or_(f"user_id.eq.{user_id},is_template.eq.true")
             .execute()
         )
         if not books.data:
             return []
+        # The seeded template ships globally active, so once a user activates
+        # their own book two rows match: the user's book must win
+        # deterministically, never PostgREST's unspecified row order.
+        chosen = sorted(
+            books.data, key=lambda row: (row["user_id"] != user_id, row["id"])
+        )[0]
         items = (
             self.client.table("price_book_items")
             .select("*")
-            .eq("price_book_id", books.data[0]["id"])
+            .eq("price_book_id", chosen["id"])
             .execute()
         )
         return [

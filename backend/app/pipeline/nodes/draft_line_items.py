@@ -67,10 +67,15 @@ def draft_line_items(state: PipelineState, runtime: Runtime[Services]) -> dict:
         book_item = book_by_id.get(item.get("price_book_item_id"))
         if book_item is not None:
             # Price comes from the book, mechanically; quantity may still be
-            # model-estimated (and flagged inferred).
+            # model-estimated (and flagged inferred). Coerce like Pydantic's
+            # lax mode does downstream, so a numeric-string quantity ("336")
+            # cannot pass validation while leaving total_cents unset.
             item["unit_price_cents"] = book_item.unit_price_cents
-            quantity = item.get("quantity")
-            if isinstance(quantity, (int, float)):
+            try:
+                quantity = float(item.get("quantity"))
+            except (TypeError, ValueError):
+                quantity = None
+            if quantity is not None:
                 item["total_cents"] = round(quantity * book_item.unit_price_cents)
         else:
             item["price_book_item_id"] = None

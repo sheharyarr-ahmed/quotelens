@@ -27,6 +27,11 @@ check() {
 check "backend pytest"  backend uv run pytest -q
 check "mobile tsc"      mobile pnpm exec tsc --noEmit
 check "mobile eslint"   mobile pnpm exec eslint .
+# Schema mirror test is part of SPEC verification check 2, which the Stop
+# hook gates; skipped until jest is wired into the mobile workspace.
+if [ -d "$ROOT/mobile" ] && [ -f "$ROOT/mobile/__tests__/quote-schema-mirror.test.ts" ]; then
+  check "mobile jest"   mobile pnpm exec jest
+fi
 
 if [ "$FAILED" -ne 0 ]; then
   echo "verify: gate FAILED — fix before stopping" >&2

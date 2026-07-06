@@ -4,7 +4,7 @@ Supabase Storage under RLS-scoped paths; no large files transit FastAPI
 
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.auth import get_current_user_id
@@ -25,6 +25,9 @@ def register_capture(
     user_id: str = Depends(get_current_user_id),
     repo=Depends(get_repo),
 ) -> dict:
+    # Service-role access bypasses RLS: assert the job belongs to the user.
+    if repo.get_job(user_id, capture.job_id) is None:
+        raise HTTPException(status_code=404, detail="job not found")
     return repo.register_capture(
         user_id, capture.job_id, capture.kind, capture.storage_path
     )

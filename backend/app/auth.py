@@ -21,6 +21,7 @@ def get_current_user_id(
             os.environ["SUPABASE_JWT_SECRET"],
             algorithms=["HS256"],
             audience="authenticated",
+            options={"require": ["sub", "exp"]},
         )
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="invalid token")

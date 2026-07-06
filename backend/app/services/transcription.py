@@ -21,6 +21,15 @@ class FasterWhisperTranscription:
 
     def transcribe(self, audio_path: str) -> Transcript:
         model = self._load()
-        segments, info = model.transcribe(audio_path)
+        source = audio_path
+        if audio_path.startswith(("http://", "https://")):
+            # faster-whisper takes a local path or file-like object, not a
+            # URL; the pipeline hands us a signed Storage URL.
+            import io
+
+            import httpx
+
+            source = io.BytesIO(httpx.get(audio_path).content)
+        segments, info = model.transcribe(source)
         text = " ".join(segment.text.strip() for segment in segments)
         return Transcript(text=text, duration_seconds=info.duration)

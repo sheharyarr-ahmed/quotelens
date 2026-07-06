@@ -127,12 +127,14 @@ create table public.quote_line_items (
   quote_id uuid not null references public.quotes (id) on delete cascade,
   user_id uuid not null references auth.users (id) on delete cascade,
   description text not null,
-  quantity numeric,
-  unit public.unit_type,
+  quantity numeric not null check (quantity > 0),
+  unit public.unit_type not null,
   unit_price_cents integer check (unit_price_cents is null or unit_price_cents >= 0),
-  total_cents integer,
+  total_cents integer check (total_cents is null or total_cents >= 0),
   price_book_item_id uuid references public.price_book_items (id) on delete set null,
-  photo_citations text[] not null check (array_length(photo_citations, 1) >= 1),
+  -- cardinality, not array_length: array_length('{}') is NULL and a NULL
+  -- check passes, which would let an uncited item through device-direct edits.
+  photo_citations text[] not null check (cardinality(photo_citations) >= 1),
   confidence public.confidence_level not null default 'stated',
   position integer not null default 0,
   created_at timestamptz not null default now(),
@@ -233,14 +235,17 @@ create policy "price_books_select_own_or_template" on public.price_books
   for select to authenticated
   using (user_id = (select auth.uid()) or is_template = true);
 
+-- is_template is reserved for the seeded global books (user_id null,
+-- inserted by migrations): users must not publish their own books into
+-- every other user's template read path.
 create policy "price_books_insert_own" on public.price_books
   for insert to authenticated
-  with check (user_id = (select auth.uid()));
+  with check (user_id = (select auth.uid()) and is_template is not true);
 
 create policy "price_books_update_own" on public.price_books
   for update to authenticated
   using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  with check (user_id = (select auth.uid()) and is_template is not true);
 
 create policy "price_books_delete_own" on public.price_books
   for delete to authenticated
@@ -326,9 +331,18 @@ create policy "captures_select_own" on public.captures
   for select to authenticated
   using (user_id = (select auth.uid()));
 
+-- FK checks bypass RLS, so ownership of the parent job is asserted here:
+-- without it a user who learns another user's job id could attach captures
+-- to that job.
 create policy "captures_insert_own" on public.captures
   for insert to authenticated
-  with check (user_id = (select auth.uid()));
+  with check (
+    user_id = (select auth.uid())
+    and exists (
+      select 1 from public.jobs j
+      where j.id = job_id and j.user_id = (select auth.uid())
+    )
+  );
 
 create policy "captures_update_own" on public.captures
   for update to authenticated
@@ -370,14 +384,29 @@ create policy "quote_line_items_select_own" on public.quote_line_items
   for select to authenticated
   using (user_id = (select auth.uid()));
 
+-- Parent-quote ownership asserted explicitly: FK checks bypass RLS, so
+-- user_id alone would let a user insert line items into someone else's
+-- quote if they learned its id.
 create policy "quote_line_items_insert_own" on public.quote_line_items
   for insert to authenticated
-  with check (user_id = (select auth.uid()));
+  with check (
+    user_id = (select auth.uid())
+    and exists (
+      select 1 from public.quotes q
+      where q.id = quote_id and q.user_id = (select auth.uid())
+    )
+  );
 
 create policy "quote_line_items_update_own" on public.quote_line_items
   for update to authenticated
   using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  with check (
+    user_id = (select auth.uid())
+    and exists (
+      select 1 from public.quotes q
+      where q.id = quote_id and q.user_id = (select auth.uid())
+    )
+  );
 
 create policy "quote_line_items_delete_own" on public.quote_line_items
   for delete to authenticated

@@ -10,6 +10,7 @@ from tests.fakes import (
     FakeStorage,
     FakeTranscription,
     InMemoryEventSink,
+    InMemoryQuoteStore,
     InMemoryTraceWriter,
 )
 
@@ -152,6 +153,7 @@ def build_services(completion_responses: list[dict]) -> Services:
         storage=FakeStorage(),
         events=InMemoryEventSink(),
         traces=InMemoryTraceWriter(),
+        quotes=InMemoryQuoteStore(),
     )
 
 

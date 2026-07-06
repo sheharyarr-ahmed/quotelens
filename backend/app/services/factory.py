@@ -2,6 +2,7 @@ import os
 
 from app.services.bundle import Services
 from app.services.claude import AnthropicLLM
+from app.services.quote_store import SupabaseQuoteStore
 from app.services.sinks import SupabaseEventSink, SupabaseTraceWriter
 from app.services.storage import SupabaseStorage
 from app.services.transcription import FasterWhisperTranscription
@@ -19,4 +20,5 @@ def build_services_from_env() -> Services:
         storage=SupabaseStorage(client),
         events=SupabaseEventSink(client),
         traces=SupabaseTraceWriter(client),
+        quotes=SupabaseQuoteStore(client),
     )

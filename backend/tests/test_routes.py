@@ -12,6 +12,11 @@ from tests.conftest import GOOD_DRAFT_RESPONSE, MATCH_RESPONSE, PARSE_RESPONSE
 
 
 class FakeRepo:
+    def get_job(self, user_id: str, job_id: str) -> dict | None:
+        if job_id == "job-1":
+            return {"id": job_id, "user_id": user_id}
+        return None
+
     def create_quote(self, user_id: str, job_id: str) -> dict:
         return {"id": "quote-1", "user_id": user_id, "job_id": job_id}
 

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from app.services.protocols import (
     EventSink,
     LLMService,
+    QuoteStore,
     StorageService,
     TraceWriter,
     TranscriptionService,
@@ -18,3 +19,4 @@ class Services:
     storage: StorageService
     events: EventSink
     traces: TraceWriter
+    quotes: QuoteStore
