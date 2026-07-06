@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Rejects AI-attribution strings in commit messages (SPEC.md · Files).
+MSG_FILE="$1"
+
+PATTERNS=(
+  "Co-Authored-By: Claude"
+  "Generated with \[Claude Code\]"
+  "Generated with Claude"
+  "noreply@anthropic.com"
+  "🤖"
+)
+
+for p in "${PATTERNS[@]}"; do
+  if grep -qiE "$p" "$MSG_FILE"; then
+    echo "commit-msg: rejected — AI-attribution string matched: $p" >&2
+    exit 1
+  fi
+done
+exit 0
