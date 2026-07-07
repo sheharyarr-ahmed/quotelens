@@ -129,6 +129,7 @@ quotelens/
 - **Play listing copy follows brand voice rules.** No em-dashes, no slop phrases, no fabricated ratings or user counts, "portfolio project by SheryLabs" stated in the full description. A privacy policy page is a Play requirement and ships as a static page on the web app.
 - **Monorepo, pnpm workspaces for mobile + web, uv for backend.** One repo, one commit history, one verify.sh.
 - **verify.sh gates on: backend pytest, mobile tsc --noEmit, mobile eslint.** Playwright E2E on the web quote page only. No mobile E2E framework in v1, cost exceeds catch-rate at this scale.
+- **Mobile UI/UX is specified before it is built, via the `/spec` interview.** The mobile screens' UI/UX (screen layouts, live-assembly animation behavior, empty/loading/error states, navigation) is deliberately not pinned down yet. When the mobile-screens phase starts, run the `/spec` skill first: it interviews the owner, and the settled UI/UX decisions are written back into this SPEC.md as an amendment before any screen code is written. Implementation then proceeds against the amended spec.
 
 ## Out of scope
 
