@@ -91,8 +91,13 @@ def photo_scuffed_wall(path: pathlib.Path) -> None:
 
 
 def voice_note(path: pathlib.Path) -> None:
+    # Samantha at a measured rate: the default compact voice at default speed
+    # made whisper-small drop a full sentence and mishear "blinds" as "burl".
     aiff = path.with_suffix(".aiff")
-    subprocess.run(["say", "-o", str(aiff), NARRATION], check=True)
+    subprocess.run(
+        ["say", "-v", "Samantha", "-r", "160", "-o", str(aiff), NARRATION],
+        check=True,
+    )
     subprocess.run(
         ["afconvert", "-f", "WAVE", "-d", "LEI16@16000", "-c", "1",
          str(aiff), str(path)],
