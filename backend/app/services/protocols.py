@@ -15,12 +15,18 @@ class TranscriptionService(Protocol):
 
 
 class LLMService(Protocol):
-    def complete_json(self, *, prompt: str, model: str) -> tuple[dict, TokenUsage]:
-        """Text completion that returns a parsed JSON object plus usage."""
+    def complete_json(
+        self, *, prompt: str, model: str, schema: dict | None = None
+    ) -> tuple[dict, TokenUsage]:
+        """Text completion that returns a parsed JSON object plus usage.
+
+        schema is a JSON Schema enforced via structured outputs; real models
+        wrap bare-prompt JSON in markdown fences, so nodes must pass it.
+        """
         ...
 
     def analyze_image_json(
-        self, *, prompt: str, image_url: str, model: str
+        self, *, prompt: str, image_url: str, model: str, schema: dict | None = None
     ) -> tuple[dict, TokenUsage]:
         """Vision completion over one image, returning parsed JSON plus usage."""
         ...

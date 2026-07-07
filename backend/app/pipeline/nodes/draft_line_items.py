@@ -37,6 +37,40 @@ Photo observations:
 {observations}
 {feedback}"""
 
+# Enforced via structured outputs. Deliberately looser than QuoteLineItem:
+# no min-length on photo_citations, so an uncited draft is still
+# representable and the validate node (not the API) owns that invariant
+# and the retry edge it drives.
+RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "line_items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "description": {"type": "string"},
+                    "quantity": {"type": "number"},
+                    "unit": {"enum": ["sqft", "linear_ft", "each", "flat"]},
+                    "price_book_item_id": {"type": ["string", "null"]},
+                    "photo_citations": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "confidence": {"enum": ["stated", "inferred"]},
+                },
+                "required": [
+                    "description", "quantity", "unit",
+                    "price_book_item_id", "photo_citations", "confidence",
+                ],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["line_items"],
+    "additionalProperties": False,
+}
+
 RETRY_FEEDBACK_TEMPLATE = """
 Your previous draft failed validation. Fix these errors and redraft all
 line items:
@@ -57,7 +91,7 @@ def draft_line_items(state: PipelineState, runtime: Runtime[Services]) -> dict:
         feedback=feedback,
     )
     data, usage = runtime.context.llm.complete_json(
-        prompt=prompt, model=config.text_model()
+        prompt=prompt, model=config.text_model(), schema=RESPONSE_SCHEMA
     )
 
     book_by_id = {item.id: item for item in state.price_book_items}

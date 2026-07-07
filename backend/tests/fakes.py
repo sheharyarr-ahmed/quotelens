@@ -34,17 +34,22 @@ class FakeLLM:
         self.completion_calls: list[dict] = []
         self.vision_calls: list[dict] = []
 
-    def complete_json(self, *, prompt: str, model: str) -> tuple[dict, TokenUsage]:
-        self.completion_calls.append({"prompt": prompt, "model": model})
+    def complete_json(
+        self, *, prompt: str, model: str, schema: dict | None = None
+    ) -> tuple[dict, TokenUsage]:
+        self.completion_calls.append(
+            {"prompt": prompt, "model": model, "schema": schema}
+        )
         if not self.responses:
             raise AssertionError("FakeLLM ran out of scripted responses")
         return self.responses.pop(0), FAKE_USAGE
 
     def analyze_image_json(
-        self, *, prompt: str, image_url: str, model: str
+        self, *, prompt: str, image_url: str, model: str, schema: dict | None = None
     ) -> tuple[dict, TokenUsage]:
         self.vision_calls.append(
-            {"prompt": prompt, "image_url": image_url, "model": model}
+            {"prompt": prompt, "image_url": image_url, "model": model,
+             "schema": schema}
         )
         if image_url not in self.vision_responses:
             raise AssertionError(f"FakeLLM has no vision response for {image_url}")

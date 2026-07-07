@@ -18,6 +18,9 @@ import pathlib
 import sys
 import time
 
+BACKEND_ROOT = pathlib.Path(__file__).parent.parent
+sys.path.insert(0, str(BACKEND_ROOT))
+
 FIXTURES = pathlib.Path(__file__).parent.parent / "tests" / "fixtures"
 TEST_EMAIL = "integration-test@quotelens.dev"
 JOB_MARKER = "Integration Test Client"

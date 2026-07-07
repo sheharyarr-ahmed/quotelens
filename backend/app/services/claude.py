@@ -17,7 +17,19 @@ class AnthropicLLM:
             api_key=api_key or os.environ["ANTHROPIC_API_KEY"]
         )
 
+    @staticmethod
+    def _output_config(schema: dict | None) -> dict:
+        # Structured outputs make the response guaranteed-parseable JSON;
+        # without a schema real models tend to wrap JSON in markdown fences.
+        if schema is None:
+            return {}
+        return {"output_config": {"format": {"type": "json_schema", "schema": schema}}}
+
     def _parse(self, response) -> tuple[dict, TokenUsage]:
+        if response.stop_reason != "end_turn":
+            raise ValueError(
+                f"LLM response incomplete: stop_reason={response.stop_reason!r}"
+            )
         text = "".join(
             block.text for block in response.content if block.type == "text"
         )
@@ -27,16 +39,19 @@ class AnthropicLLM:
         )
         return json.loads(text), usage
 
-    def complete_json(self, *, prompt: str, model: str) -> tuple[dict, TokenUsage]:
+    def complete_json(
+        self, *, prompt: str, model: str, schema: dict | None = None
+    ) -> tuple[dict, TokenUsage]:
         response = self.client.messages.create(
             model=model,
             max_tokens=4096,
+            **self._output_config(schema),
             messages=[{"role": "user", "content": prompt}],
         )
         return self._parse(response)
 
     def analyze_image_json(
-        self, *, prompt: str, image_url: str, model: str
+        self, *, prompt: str, image_url: str, model: str, schema: dict | None = None
     ) -> tuple[dict, TokenUsage]:
         image_bytes = httpx.get(image_url).content
         import base64
@@ -44,6 +59,7 @@ class AnthropicLLM:
         response = self.client.messages.create(
             model=model,
             max_tokens=2048,
+            **self._output_config(schema),
             messages=[
                 {
                     "role": "user",

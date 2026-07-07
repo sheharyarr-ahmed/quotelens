@@ -20,12 +20,35 @@ heard.
 Narration:
 {transcript}"""
 
+# Enforced via structured outputs; mirrors WalkthroughTask.
+RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "tasks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "description": {"type": "string"},
+                    "quantity": {"type": ["number", "null"]},
+                    "unit": {"enum": ["sqft", "linear_ft", "each", "flat", None]},
+                    "source": {"enum": ["stated", "inferred"]},
+                },
+                "required": ["description", "quantity", "unit", "source"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["tasks"],
+    "additionalProperties": False,
+}
+
 
 @traced("parse_walkthrough")
 def parse_walkthrough(state: PipelineState, runtime: Runtime[Services]) -> dict:
     prompt = PROMPT_TEMPLATE.format(transcript=state.transcript.text)
     data, usage = runtime.context.llm.complete_json(
-        prompt=prompt, model=config.text_model()
+        prompt=prompt, model=config.text_model(), schema=RESPONSE_SCHEMA
     )
     tasks = [WalkthroughTask.model_validate(task) for task in data["tasks"]]
     return {

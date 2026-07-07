@@ -23,6 +23,28 @@ Price book:
 Tasks:
 {tasks}"""
 
+# Enforced via structured outputs; the known-ids guard below stays the
+# authority on whether an id is real.
+RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "matches": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "task_index": {"type": "integer"},
+                    "price_book_item_id": {"type": ["string", "null"]},
+                },
+                "required": ["task_index", "price_book_item_id"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["matches"],
+    "additionalProperties": False,
+}
+
 
 @traced("match_pricebook")
 def match_pricebook(state: PipelineState, runtime: Runtime[Services]) -> dict:
@@ -31,7 +53,7 @@ def match_pricebook(state: PipelineState, runtime: Runtime[Services]) -> dict:
         tasks=json.dumps([t.model_dump() for t in state.parsed_tasks]),
     )
     data, usage = runtime.context.llm.complete_json(
-        prompt=prompt, model=config.text_model()
+        prompt=prompt, model=config.text_model(), schema=RESPONSE_SCHEMA
     )
     known_ids = {item.id for item in state.price_book_items}
     matches = []

@@ -21,13 +21,31 @@ List visible surfaces (walls, ceiling, trim, floor), visible damage
 (water stain, mold, cracked drywall), the room type if recognizable, and a
 rough dimension estimate only if the photo supports one."""
 
+# Enforced via structured outputs; mirrors PhotoObservation minus photo_id,
+# which this node stamps mechanically from the capture, never the model.
+RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "surfaces": {"type": "array", "items": {"type": "string"}},
+        "damage": {"type": "array", "items": {"type": "string"}},
+        "room": {"type": ["string", "null"]},
+        "dimensions_estimate": {"type": ["string", "null"]},
+        "notes": {"type": ["string", "null"]},
+    },
+    "required": ["surfaces", "damage", "room", "dimensions_estimate", "notes"],
+    "additionalProperties": False,
+}
+
 
 @traced("analyze_photos")
 def analyze_photos(state: PipelineState, runtime: Runtime[Services]) -> dict:
     def analyze_one(photo) -> tuple[PhotoObservation, TokenUsage]:
         url = runtime.context.storage.create_signed_url(photo.storage_path)
         data, usage = runtime.context.llm.analyze_image_json(
-            prompt=PROMPT, image_url=url, model=config.vision_model()
+            prompt=PROMPT,
+            image_url=url,
+            model=config.vision_model(),
+            schema=RESPONSE_SCHEMA,
         )
         return PhotoObservation(photo_id=photo.photo_id, **data), usage
 
