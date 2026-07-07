@@ -2,14 +2,16 @@
 
 Cross-platform (iOS + Android) AI quoting app for trades. **SPEC.md is the single source of truth** for all architecture decisions — read it before changing anything; the spec-reviewer agent (`.claude/agents/spec-reviewer.md`) reviews diffs against it and flags hard-invariant violations.
 
-## Current state (after session 3, 2026-07-07)
+## Current state (after session 4, 2026-07-07)
 
 Monorepo scaffold + complete backend pipeline (session 1, mocked; adversarial review done). Session 2 stood up real infra: hosted Supabase project `quotelens` (ref `nxuchpuslgkuawfliqsj`, ap-northeast-1, Postgres 17) linked, both migrations applied/verified remotely (9 tables RLS-enabled, seeded price books, private `captures` bucket), root `.env` (gitignored) fully populated with verified keys. Model ids pinned to `claude-sonnet-5` (vision) and `claude-haiku-4-5-20251001` (text).
 
 Session 3 completed the **first real end-to-end integration run**: `backend/scripts/integration_run.py` (idempotent setup: test user `integration-test@quotelens.dev`, reused job, fixture media in `backend/tests/fixtures/`) drives `graph.invoke` with `build_services_from_env()` and asserts all hard invariants against the live DB — all pass, twice. Real Sonnet 5 vision + Haiku text + whisper-small transcription (~35s/run, ~11k tokens). Key fix: all four LLM calls now use **structured outputs** (`output_config.format` json_schema; per-node `RESPONSE_SCHEMA` beside each prompt) because Sonnet 5 wraps bare-prompt JSON in markdown fences; draft schema stays looser than `QuoteLineItem` so `validate` keeps owning the citation invariant/retry edge. `_parse` fails loudly on `stop_reason != end_turn`.
 
+Session 4 ran the `/spec` mobile UI/UX interview and amended SPEC.md to **v1.3** — see its new "Mobile UI/UX" Decisions section for every settled screen/animation/state decision (jobs-first nav, walk-and-talk capture, agent_traces stage ticker, email OTP auth, StyleSheet tokens light-only, etc.). The gate in "Repo and process" is cleared; no screen code exists yet.
+
 Remaining work, in intended order:
-1. Mobile screens/hooks: capture session, live-assembly review screen (Reanimated, driven by real `quote_events`), trace viewer, magic-link auth. **Before writing any screen code: run the `/spec` skill to interview the owner on the UI/UX (layouts, animation behavior, empty/error states, navigation) and amend SPEC.md with the settled decisions** (see SPEC.md - Repo and process). Implement against the amended spec.
+1. Mobile screens/hooks: implement against SPEC.md v1.3 "Mobile UI/UX" exactly — capture session, live-assembly review screen, trace viewer, OTP auth. New deps to add: expo-camera, expo-audio, @react-native-async-storage/async-storage. One migration: add quotes/quote_line_items/quote_events/agent_traces to the `supabase_realtime` publication. Verify screens/hooks against the real backend (uvicorn + live Supabase), evidence per step.
 2. Web quote page logic + Accept flow + Playwright tests.
 3. EAS production AAB + Play submission; README + 90-second demo video.
 
