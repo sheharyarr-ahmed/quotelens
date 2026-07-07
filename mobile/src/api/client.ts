@@ -47,3 +47,30 @@ export function generateQuote(
     body: JSON.stringify(body),
   });
 }
+
+export interface CaptureRegistration {
+  job_id: string;
+  kind: 'photo' | 'audio';
+  storage_path: string;
+}
+
+export function registerCapture(
+  body: CaptureRegistration,
+  accessToken: string,
+): Promise<{ id: string }> {
+  return request<{ id: string }>('/captures', accessToken, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+// Regenerate re-runs the pipeline from the cached transcript and photo
+// observations; it never re-pays transcription or vision (SPEC.md - Pipeline).
+export function regenerateQuote(
+  quoteId: string,
+  accessToken: string,
+): Promise<GenerateResponse> {
+  return request<GenerateResponse>(`/quotes/${quoteId}/regenerate`, accessToken, {
+    method: 'POST',
+  });
+}
