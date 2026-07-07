@@ -2,15 +2,16 @@
 
 Cross-platform (iOS + Android) AI quoting app for trades. **SPEC.md is the single source of truth** for all architecture decisions — read it before changing anything; the spec-reviewer agent (`.claude/agents/spec-reviewer.md`) reviews diffs against it and flags hard-invariant violations.
 
-## Current state (after session 2, 2026-07-06)
+## Current state (after session 3, 2026-07-07)
 
-Monorepo scaffold + complete backend pipeline (session 1, mocked; multi-agent adversarial review completed, all confirmed findings fixed). Session 2 stood up the real infrastructure: hosted Supabase project `quotelens` (ref `nxuchpuslgkuawfliqsj`, ap-northeast-1, Postgres 17) is linked (`supabase/config.toml`), both migrations are **applied and verified remotely** (9 tables all RLS-enabled, 34 policies, seeded price books, private `captures` bucket). Root `.env` (gitignored) is fully populated with verified keys: Supabase URL/anon/service-role, JWT secret (validates the project's JWTs via raw UTF-8 HMAC), and a working Anthropic key. The `claude-*-latest` aliases never existed on the API; model ids are pinned to `claude-sonnet-5` (vision) and `claude-haiku-4-5-20251001` (text). No real API/pipeline run has happened yet.
+Monorepo scaffold + complete backend pipeline (session 1, mocked; adversarial review done). Session 2 stood up real infra: hosted Supabase project `quotelens` (ref `nxuchpuslgkuawfliqsj`, ap-northeast-1, Postgres 17) linked, both migrations applied/verified remotely (9 tables RLS-enabled, seeded price books, private `captures` bucket), root `.env` (gitignored) fully populated with verified keys. Model ids pinned to `claude-sonnet-5` (vision) and `claude-haiku-4-5-20251001` (text).
+
+Session 3 completed the **first real end-to-end integration run**: `backend/scripts/integration_run.py` (idempotent setup: test user `integration-test@quotelens.dev`, reused job, fixture media in `backend/tests/fixtures/`) drives `graph.invoke` with `build_services_from_env()` and asserts all hard invariants against the live DB — all pass, twice. Real Sonnet 5 vision + Haiku text + whisper-small transcription (~35s/run, ~11k tokens). Key fix: all four LLM calls now use **structured outputs** (`output_config.format` json_schema; per-node `RESPONSE_SCHEMA` beside each prompt) because Sonnet 5 wraps bare-prompt JSON in markdown fences; draft schema stays looser than `QuoteLineItem` so `validate` keeps owning the citation invariant/retry edge. `_parse` fails loudly on `stop_reason != end_turn`.
 
 Remaining work, in intended order:
-1. Real integration runs: Anthropic vision/text nodes, faster-whisper transcription.
-2. Mobile screens/hooks: capture session, live-assembly review screen (Reanimated, driven by real `quote_events`), trace viewer, magic-link auth.
-3. Web quote page logic + Accept flow + Playwright tests.
-4. EAS production AAB + Play submission; README + 90-second demo video.
+1. Mobile screens/hooks: capture session, live-assembly review screen (Reanimated, driven by real `quote_events`), trace viewer, magic-link auth.
+2. Web quote page logic + Accept flow + Playwright tests.
+3. EAS production AAB + Play submission; README + 90-second demo video.
 
 ## Layout
 
