@@ -47,3 +47,160 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Client quote page (brand blues from the mobile theme: #208AEF / #E6F4FE) */
+
+.quote-page {
+  margin: 0 auto;
+  max-width: 720px;
+  padding: 48px 20px 64px;
+  width: 100%;
+}
+
+.brand {
+  color: #208aef;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.quote-header h1 {
+  font-size: 28px;
+  line-height: 1.25;
+  margin-top: 8px;
+}
+
+.quote-meta {
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+.banner {
+  border-radius: 10px;
+  font-weight: 600;
+  margin-top: 24px;
+  padding: 14px 16px;
+}
+
+.banner-accepted {
+  background: #e6f4fe;
+  border: 1px solid #208aef;
+  color: #0f5da8;
+}
+
+.banner-muted {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+}
+
+.line-items {
+  border-collapse: collapse;
+  margin-top: 32px;
+  width: 100%;
+}
+
+.line-items th,
+.line-items td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.line-items thead th {
+  color: #6b7280;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.line-items .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.line-items tfoot td {
+  border-bottom: none;
+  font-size: 18px;
+  font-weight: 700;
+  padding-top: 18px;
+}
+
+.unpriced {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.accept-area {
+  margin-top: 36px;
+}
+
+.accept-button {
+  background: #208aef;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 700;
+  min-height: 52px;
+  padding: 14px 28px;
+  width: 100%;
+}
+
+.accept-button:disabled {
+  opacity: 0.5;
+}
+
+.accept-error {
+  color: #dc2626;
+  margin-top: 10px;
+}
+
+.accept-footnote {
+  color: #6b7280;
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.not-found-page {
+  margin: auto;
+  max-width: 480px;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.not-found-page h1 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.not-found-page p {
+  color: #6b7280;
+}
+
+@media (prefers-color-scheme: dark) {
+  .quote-meta,
+  .accept-footnote,
+  .not-found-page p {
+    color: #9ca3af;
+  }
+
+  .line-items th,
+  .line-items td {
+    border-bottom-color: #374151;
+  }
+
+  .banner-muted {
+    background: #1f2937;
+    border-color: #374151;
+    color: #d1d5db;
+  }
+
+  .banner-accepted {
+    background: #0c2b4a;
+    color: #7cc0f7;
+  }
+}
