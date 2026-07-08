@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Confidence } from '@/lib/quote-schema';
+import { colors, radii, spacing, type as typography } from '@/lib/theme';
 
 // The model declaring uncertainty is a feature: inferred lines render with
 // a visible flag (SPEC.md - Quote schema and integrity).
@@ -17,10 +18,11 @@ export function ConfidenceFlag({ confidence }: { confidence: Confidence }) {
 
 const styles = StyleSheet.create({
   badge: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 4,
-    paddingHorizontal: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.warningLight,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  label: { color: '#92400E', fontSize: 12, fontWeight: '600' },
+  label: { ...typography.captionBold, color: colors.warning },
 });

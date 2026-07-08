@@ -1,0 +1,224 @@
+{
+  "events": [
+    {
+      "id": 6,
+      "event_type": "line_item_drafted",
+      "payload": {
+        "index": 0,
+        "line_item": {
+          "unit": "flat",
+          "quantity": 1,
+          "confidence": "inferred",
+          "description": "Treat ceiling water stain",
+          "total_cents": 8500,
+          "photo_citations": [
+            "photo-water-stain"
+          ],
+          "unit_price_cents": 8500,
+          "price_book_item_id": "0418b895-b110-4fff-a1d3-fdaa9174aed1"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "event_type": "line_item_drafted",
+      "payload": {
+        "index": 1,
+        "line_item": {
+          "unit": "sqft",
+          "quantity": 80,
+          "confidence": "stated",
+          "description": "Apply stain blocking primer to wall",
+          "total_cents": 7600,
+          "photo_citations": [
+            "photo-water-stain"
+          ],
+          "unit_price_cents": 95,
+          "price_book_item_id": "39b3a21f-ae21-47e3-a5da-47be1913d615"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "event_type": "line_item_drafted",
+      "payload": {
+        "index": 2,
+        "line_item": {
+          "unit": "sqft",
+          "quantity": 350,
+          "confidence": "stated",
+          "description": "Repaint walls with two coats",
+          "total_cents": 63000,
+          "photo_citations": [
+            "photo-scuffed-wall"
+          ],
+          "unit_price_cents": 180,
+          "price_book_item_id": "c7bd1c7d-78ef-4031-b7fa-662084a0333a"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "event_type": "line_item_drafted",
+      "payload": {
+        "index": 3,
+        "line_item": {
+          "unit": "each",
+          "quantity": 1,
+          "confidence": "inferred",
+          "description": "Drywall patch in corner",
+          "total_cents": 6500,
+          "photo_citations": [
+            "photo-water-stain"
+          ],
+          "unit_price_cents": 6500,
+          "price_book_item_id": "b4cbfa85-dbb3-42e3-9ca9-e1c028abcdaf"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "event_type": "line_item_drafted",
+      "payload": {
+        "index": 4,
+        "line_item": {
+          "unit": "each",
+          "quantity": 1,
+          "confidence": "stated",
+          "description": "Replace window blinds",
+          "total_cents": null,
+          "photo_citations": [
+            "photo-scuffed-wall"
+          ],
+          "unit_price_cents": null,
+          "price_book_item_id": null
+        }
+      }
+    },
+    {
+      "id": 11,
+      "event_type": "generation_completed",
+      "payload": {
+        "quote": {
+          "id": "a6638a1a-2508-43dd-b6a8-fba30c82b436",
+          "job_id": "b9ff95a2-fa13-4771-8506-078b2dcd17bc",
+          "status": "completed",
+          "line_items": [
+            {
+              "unit": "flat",
+              "quantity": 1,
+              "confidence": "inferred",
+              "description": "Treat ceiling water stain",
+              "total_cents": 8500,
+              "photo_citations": [
+                "photo-water-stain"
+              ],
+              "unit_price_cents": 8500,
+              "price_book_item_id": "0418b895-b110-4fff-a1d3-fdaa9174aed1"
+            },
+            {
+              "unit": "sqft",
+              "quantity": 80,
+              "confidence": "stated",
+              "description": "Apply stain blocking primer to wall",
+              "total_cents": 7600,
+              "photo_citations": [
+                "photo-water-stain"
+              ],
+              "unit_price_cents": 95,
+              "price_book_item_id": "39b3a21f-ae21-47e3-a5da-47be1913d615"
+            },
+            {
+              "unit": "sqft",
+              "quantity": 350,
+              "confidence": "stated",
+              "description": "Repaint walls with two coats",
+              "total_cents": 63000,
+              "photo_citations": [
+                "photo-scuffed-wall"
+              ],
+              "unit_price_cents": 180,
+              "price_book_item_id": "c7bd1c7d-78ef-4031-b7fa-662084a0333a"
+            },
+            {
+              "unit": "each",
+              "quantity": 1,
+              "confidence": "inferred",
+              "description": "Drywall patch in corner",
+              "total_cents": 6500,
+              "photo_citations": [
+                "photo-water-stain"
+              ],
+              "unit_price_cents": 6500,
+              "price_book_item_id": "b4cbfa85-dbb3-42e3-9ca9-e1c028abcdaf"
+            },
+            {
+              "unit": "each",
+              "quantity": 1,
+              "confidence": "stated",
+              "description": "Replace window blinds",
+              "total_cents": null,
+              "photo_citations": [
+                "photo-scuffed-wall"
+              ],
+              "unit_price_cents": null,
+              "price_book_item_id": null
+            }
+          ],
+          "subtotal_cents": 85600
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "node": "analyze_photos",
+      "duration_ms": 9167,
+      "input_tokens": 3126,
+      "output_tokens": 408,
+      "created_at": "2026-07-07T10:53:07.319614+00:00"
+    },
+    {
+      "node": "transcribe",
+      "duration_ms": 19697,
+      "input_tokens": null,
+      "output_tokens": null,
+      "created_at": "2026-07-07T10:53:17.832822+00:00"
+    },
+    {
+      "node": "parse_walkthrough",
+      "duration_ms": 2089,
+      "input_tokens": 596,
+      "output_tokens": 161,
+      "created_at": "2026-07-07T10:53:20.679625+00:00"
+    },
+    {
+      "node": "match_pricebook",
+      "duration_ms": 5442,
+      "input_tokens": 4573,
+      "output_tokens": 203,
+      "created_at": "2026-07-07T10:53:26.448857+00:00"
+    },
+    {
+      "node": "draft_line_items",
+      "duration_ms": 3907,
+      "input_tokens": 1258,
+      "output_tokens": 393,
+      "created_at": "2026-07-07T10:53:30.635278+00:00"
+    },
+    {
+      "node": "validate",
+      "duration_ms": 0,
+      "input_tokens": null,
+      "output_tokens": null,
+      "created_at": "2026-07-07T10:53:30.916147+00:00"
+    },
+    {
+      "node": "compile_quote",
+      "duration_ms": 1041,
+      "input_tokens": null,
+      "output_tokens": null,
+      "created_at": "2026-07-07T10:53:32.148354+00:00"
+    }
+  ]
+}
