@@ -2,6 +2,8 @@
 // theming). Plain StyleSheet consumes these; identical pixels on both
 // platforms keeps success criterion #1 mechanical.
 
+import { Platform } from 'react-native';
+
 export const colors = {
   // Brand blues seeded from the splash/adaptive-icon assets.
   primary: '#208AEF',
@@ -53,5 +55,6 @@ export const type = {
   bodyBold: { fontSize: 16, fontWeight: '600' },
   caption: { fontSize: 13, fontWeight: '400' },
   captionBold: { fontSize: 13, fontWeight: '600' },
-  mono: { fontSize: 12, fontFamily: 'monospace' },
+  // 'monospace' is Android-only; iOS silently falls back to the system font.
+  mono: { fontSize: 12, fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }) },
 } as const;
