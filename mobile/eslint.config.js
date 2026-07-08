@@ -5,6 +5,7 @@ const expoConfig = require('eslint-config-expo/flat');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', '.expo/*'],
+    // scripts/ is Node tooling run via tsx, outside the app lint surface.
+    ignores: ['dist/*', '.expo/*', 'scripts/*'],
   },
 ]);

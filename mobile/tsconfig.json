@@ -17,5 +17,11 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  // scripts/ is Node tooling executed via tsx (needs node globals that the
+  // RN typecheck deliberately excludes via "types": ["jest"]).
+  "exclude": [
+    "node_modules",
+    "scripts"
   ]
 }
