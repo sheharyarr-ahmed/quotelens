@@ -29,6 +29,18 @@ class SupabaseQuoteRepo:
         )
         return result.data[0] if result.data else None
 
+    def mark_generating(self, user_id: str, quote_id: str) -> None:
+        """Flip a quote back to 'generating' before a regenerate re-run; the
+        quotes UPDATE rides realtime so every open review screen drops back
+        into the stage ticker (SPEC.md - Mobile UI/UX - failed state)."""
+        (
+            self.client.table("quotes")
+            .update({"status": "generating"})
+            .eq("id", quote_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+
     def get_quote(self, user_id: str, quote_id: str) -> dict | None:
         result = (
             self.client.table("quotes")

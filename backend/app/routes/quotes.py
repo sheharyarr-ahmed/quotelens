@@ -47,5 +47,8 @@ def regenerate(
         transcript=transcript,
         observations=observations,
     )
+    # Before scheduling: the status flip is the realtime signal that resets
+    # every open review screen into the stage ticker for the re-run.
+    repo.mark_generating(user_id, quote_id)
     background.add_task(run_pipeline, state, services)
     return {"quote_id": quote_id}
