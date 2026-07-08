@@ -5,6 +5,7 @@ description = "QuoteLens agent pipeline and API (FastAPI + LangGraph)"
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.116.0",
+    "certifi>=2026.6.17",
     "fastapi>=0.115",
     "faster-whisper>=1.2",
     "langgraph>=1.2,<2",
