@@ -1,6 +1,9 @@
-// Seeds two fresh quotes per run against the live project: one stays 'sent'
-// for the render test, one gets accepted. Tokens/ids ride process.env into
-// the worker processes; global-teardown removes everything it created.
+// Seeds three fresh quotes per run against the live project: one stays
+// 'sent' for the render test, one gets accepted, one absorbs the
+// concurrent-accept race test. Tokens/ids ride process.env into the worker
+// processes; global-teardown removes everything recorded there. If seeding
+// fails partway, the rows created so far are deleted before rethrowing —
+// Playwright does not run teardown after a failed setup.
 
 import { ensureUser, JOB_MARKER, seedQuote, serviceClient } from "./support";
 
@@ -33,11 +36,28 @@ export default async function globalSetup() {
     jobId = job.id;
   }
 
-  const renderQuote = await seedQuote(client, userId, jobId!);
-  const acceptQuote = await seedQuote(client, userId, jobId!);
+  const created: string[] = [];
+  try {
+    const renderQuote = await seedQuote(client, userId, jobId!);
+    created.push(renderQuote.id);
+    process.env.PW_RENDER_TOKEN = renderQuote.shareToken;
+    process.env.PW_RENDER_ID = renderQuote.id;
 
-  process.env.PW_RENDER_TOKEN = renderQuote.shareToken;
-  process.env.PW_RENDER_ID = renderQuote.id;
-  process.env.PW_ACCEPT_TOKEN = acceptQuote.shareToken;
-  process.env.PW_ACCEPT_ID = acceptQuote.id;
+    const acceptQuote = await seedQuote(client, userId, jobId!);
+    created.push(acceptQuote.id);
+    process.env.PW_ACCEPT_TOKEN = acceptQuote.shareToken;
+    process.env.PW_ACCEPT_ID = acceptQuote.id;
+
+    const raceQuote = await seedQuote(client, userId, jobId!);
+    created.push(raceQuote.id);
+    process.env.PW_RACE_TOKEN = raceQuote.shareToken;
+    process.env.PW_RACE_ID = raceQuote.id;
+  } catch (err) {
+    if (created.length > 0) {
+      await client.from("quote_events").delete().in("quote_id", created);
+      await client.from("quote_line_items").delete().in("quote_id", created);
+      await client.from("quotes").delete().in("id", created);
+    }
+    throw err;
+  }
 }

@@ -12,14 +12,20 @@ from app.routes.quotes import regenerate
 
 
 class FakeRegenRepo:
-    def __init__(self, cached=True):
+    def __init__(self, cached=True, status="failed"):
         self.cached = cached
+        self.status = status
         self.marked: list[tuple[str, str]] = []
         self.tasks_when_marked: int | None = None
         self._bg: BackgroundTasks | None = None
 
     def get_quote(self, user_id, quote_id):
-        return {"id": quote_id, "job_id": "job-1", "user_id": user_id}
+        return {
+            "id": quote_id,
+            "job_id": "job-1",
+            "user_id": user_id,
+            "status": self.status,
+        }
 
     def cached_pipeline_context(self, quote_id):
         if not self.cached:
@@ -56,3 +62,27 @@ def test_regenerate_409_without_cache_leaves_status_alone():
     assert exc.value.status_code == 409
     assert repo.marked == []
     assert background.tasks == []
+
+
+@pytest.mark.parametrize("status", ["accepted", "generating", "sent"])
+def test_regenerate_guards_unsettled_and_agreed_states(status):
+    """'accepted' must never be silently erased by a re-run; 'generating'
+    would race two pipelines onto one quote; 'sent' is in the client's
+    hands."""
+    repo = FakeRegenRepo(status=status)
+    background = BackgroundTasks()
+    with pytest.raises(HTTPException) as exc:
+        regenerate("q1", background, user_id="u1", repo=repo, services=object())
+    assert exc.value.status_code == 409
+    assert repo.marked == []
+    assert background.tasks == []
+
+
+def test_regenerate_allows_completed():
+    repo = FakeRegenRepo(status="completed")
+    background = BackgroundTasks()
+    result = regenerate(
+        "q1", background, user_id="u1", repo=repo, services=object()
+    )
+    assert result == {"quote_id": "q1"}
+    assert repo.marked == [("u1", "q1")]

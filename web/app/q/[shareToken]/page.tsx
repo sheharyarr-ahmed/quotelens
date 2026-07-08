@@ -36,7 +36,9 @@ export default async function QuotePage({
   }
 
   const accepted = quote.status === "accepted";
-  const acceptable = quote.status === "sent" || quote.status === "completed";
+  // 'sent' only: a pre-send 'completed' quote is still mutable on the
+  // estimator's device and must not be acceptable (SPEC - send design).
+  const acceptable = quote.status === "sent";
   const pending = quote.status === "generating";
   const failed = quote.status === "failed";
   const created = new Date(quote.created_at).toLocaleDateString("en-US", {
@@ -58,7 +60,7 @@ export default async function QuotePage({
 
       {accepted && (
         <div className="banner banner-accepted" data-testid="accepted-banner">
-          Quote accepted. Your estimator has been notified.
+          Quote accepted. Your acceptance has been recorded.
         </div>
       )}
       {(pending || failed) && (

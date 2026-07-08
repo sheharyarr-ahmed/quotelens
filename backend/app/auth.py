@@ -43,10 +43,22 @@ def get_current_user_id(
     token = credentials.credentials
     try:
         if jwt.get_unverified_header(token).get("alg") == "ES256":
-            key = _jwks().get_signing_key_from_jwt(token).key
+            try:
+                key = _jwks().get_signing_key_from_jwt(token).key
+            except jwt.exceptions.PyJWKClientConnectionError:
+                # Server-side outage, not a bad token: a 401 here would make
+                # clients treat a valid session as expired.
+                raise HTTPException(
+                    status_code=503, detail="auth keys unavailable"
+                )
             algorithms = ["ES256"]
         else:
-            key = os.environ["SUPABASE_JWT_SECRET"]
+            secret = os.environ.get("SUPABASE_JWT_SECRET")
+            if secret is None:
+                # The header alg is attacker-chosen: on a signing-keys-only
+                # deployment a non-ES256 token must 401, never KeyError->500.
+                raise HTTPException(status_code=401, detail="invalid token")
+            key = secret
             algorithms = ["HS256"]
         payload = jwt.decode(
             token,

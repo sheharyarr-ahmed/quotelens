@@ -83,3 +83,32 @@ test("a second accept is idempotent — no duplicate agreement event", async ({
     .eq("event_type", "quote_accepted");
   expect(events).toHaveLength(1);
 });
+
+test("concurrent accepts record exactly one agreement event", async ({
+  request,
+}) => {
+  const raceToken = process.env.PW_RACE_TOKEN!;
+  const raceId = process.env.PW_RACE_ID!;
+  const responses = await Promise.all(
+    Array.from({ length: 5 }, () =>
+      request.post("/api/accept", { data: { share_token: raceToken } }),
+    ),
+  );
+  for (const response of responses) {
+    expect(response.status()).toBe(200);
+  }
+
+  const client = serviceClient();
+  const { data: quote } = await client
+    .from("quotes")
+    .select("status")
+    .eq("id", raceId)
+    .single();
+  expect(quote?.status).toBe("accepted");
+  const { data: events } = await client
+    .from("quote_events")
+    .select("id")
+    .eq("quote_id", raceId)
+    .eq("event_type", "quote_accepted");
+  expect(events).toHaveLength(1);
+});

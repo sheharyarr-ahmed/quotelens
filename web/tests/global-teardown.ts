@@ -4,9 +4,11 @@
 import { serviceClient } from "./support";
 
 export default async function globalTeardown() {
-  const ids = [process.env.PW_RENDER_ID, process.env.PW_ACCEPT_ID].filter(
-    (id): id is string => Boolean(id),
-  );
+  const ids = [
+    process.env.PW_RENDER_ID,
+    process.env.PW_ACCEPT_ID,
+    process.env.PW_RACE_ID,
+  ].filter((id): id is string => Boolean(id));
   if (ids.length === 0) return;
   const client = serviceClient();
   await client.from("quote_events").delete().in("quote_id", ids);

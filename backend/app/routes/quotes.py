@@ -35,6 +35,15 @@ def regenerate(
     quote = repo.get_quote(user_id, quote_id)
     if quote is None:
         raise HTTPException(status_code=404, detail="quote not found")
+    # Only settled outcomes may re-run: regenerating an 'accepted' quote
+    # would silently erase the client's recorded agreement, 'generating'
+    # would race two pipelines onto one quote, and 'sent' is already in the
+    # client's hands.
+    if quote["status"] not in ("completed", "failed"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"cannot regenerate a {quote['status']} quote",
+        )
     transcript, observations = repo.cached_pipeline_context(quote_id)
     if transcript is None or observations is None:
         raise HTTPException(

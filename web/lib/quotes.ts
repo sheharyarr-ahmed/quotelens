@@ -78,12 +78,20 @@ export type AcceptResult =
   | { outcome: "not_found" };
 
 /**
- * Accept = INSERT quote_events(quote_accepted) + UPDATE quotes.status.
+ * Accept = UPDATE quotes.status + INSERT quote_events(quote_accepted).
  * (SPEC: "Accept writes a quote_events row"; Verification #3 additionally
- * checks the status change.) The event insert shape and its realtime
- * delivery to open mobile screens are proven by the live harness (S10).
- * Idempotent: a second accept is a no-op — SPEC does not ask for duplicate
- * agreement records, and the event_type enum would happily allow them.
+ * checks the status change.) The event's realtime delivery to open mobile
+ * screens is proven by the live harness (S10).
+ *
+ * Only a 'sent' quote is acceptable: the share link goes out at send, and a
+ * pre-send 'completed' quote is still mutable on the estimator's device —
+ * exactly the "accept a quote still mutating under them" state SPEC's send
+ * design exists to prevent.
+ *
+ * Concurrency: the flip is a conditional UPDATE (WHERE status='sent'), so
+ * of N simultaneous accepts exactly one wins and writes the event; the
+ * partial unique index quote_events_one_accept_per_quote backstops the
+ * one-agreement-record invariant at the DB layer (23505 = already written).
  */
 export async function acceptQuoteByShareToken(
   shareToken: string,
@@ -100,26 +108,59 @@ export async function acceptQuoteByShareToken(
   if (!quote) {
     return { outcome: "not_found" };
   }
-  if (quote.status === "accepted") {
-    return { outcome: "already_accepted" };
-  }
-  // A link only exists once the estimator shared it (status 'sent'), but a
-  // quote mid-generation or failed must never be acceptable.
-  if (quote.status === "generating" || quote.status === "failed") {
-    return { outcome: "not_acceptable", status: quote.status };
-  }
-  const { error: eventError } = await client
-    .from("quote_events")
-    .insert({ quote_id: quote.id, event_type: "quote_accepted", payload: {} });
-  if (eventError) {
-    throw new Error(`accept event insert failed: ${eventError.message}`);
-  }
-  const { error: statusError } = await client
+
+  const { data: flipped, error: flipError } = await client
     .from("quotes")
     .update({ status: "accepted" })
-    .eq("id", quote.id);
-  if (statusError) {
-    throw new Error(`accept status update failed: ${statusError.message}`);
+    .eq("id", quote.id)
+    .eq("status", "sent")
+    .select("id");
+  if (flipError) {
+    throw new Error(`accept status update failed: ${flipError.message}`);
   }
+
+  if ((flipped ?? []).length === 0) {
+    const { data: current, error: currentError } = await client
+      .from("quotes")
+      .select("status")
+      .eq("id", quote.id)
+      .maybeSingle();
+    if (currentError) {
+      throw new Error(`quote re-read failed: ${currentError.message}`);
+    }
+    if (current?.status === "accepted") {
+      // Self-heals a lost event from an earlier interrupted accept, but
+      // only when it is actually missing — a racing loser must not double
+      // up the winner's insert.
+      const { data: existing, error: existingError } = await client
+        .from("quote_events")
+        .select("id")
+        .eq("quote_id", quote.id)
+        .eq("event_type", "quote_accepted")
+        .limit(1);
+      if (existingError) {
+        throw new Error(`accept event lookup failed: ${existingError.message}`);
+      }
+      if ((existing ?? []).length === 0) {
+        await recordAcceptedEvent(client, quote.id);
+      }
+      return { outcome: "already_accepted" };
+    }
+    return { outcome: "not_acceptable", status: current?.status ?? quote.status };
+  }
+
+  await recordAcceptedEvent(client, quote.id);
   return { outcome: "accepted" };
+}
+
+async function recordAcceptedEvent(
+  client: ReturnType<typeof serviceClient>,
+  quoteId: string,
+): Promise<void> {
+  const { error } = await client
+    .from("quote_events")
+    .insert({ quote_id: quoteId, event_type: "quote_accepted", payload: {} });
+  if (error && error.code !== "23505") {
+    throw new Error(`accept event insert failed: ${error.message}`);
+  }
 }

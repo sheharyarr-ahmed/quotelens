@@ -87,3 +87,29 @@ def test_expired_token_rejected(es256_keypair):
     with pytest.raises(HTTPException) as exc:
         auth.get_current_user_id(_creds(token))
     assert exc.value.status_code == 401
+
+
+def test_hs256_token_without_legacy_secret_is_401_not_500(monkeypatch):
+    """The header alg is attacker-chosen: a non-ES256 token on a deployment
+    without the legacy secret must 401, never KeyError -> 500."""
+    monkeypatch.delenv("SUPABASE_JWT_SECRET", raising=False)
+    token = jwt.encode(_claims(), "whatever", algorithm="HS256")
+    with pytest.raises(HTTPException) as exc:
+        auth.get_current_user_id(_creds(token))
+    assert exc.value.status_code == 401
+
+
+def test_jwks_outage_is_503_not_401(monkeypatch):
+    """A JWKS fetch failure is a server-side outage; 401 would make clients
+    drop valid sessions and force re-auth."""
+    private = ec.generate_private_key(ec.SECP256R1())
+
+    class OutageJWKSClient:
+        def get_signing_key_from_jwt(self, token):
+            raise jwt.exceptions.PyJWKClientConnectionError("fetch failed")
+
+    monkeypatch.setattr(auth, "_jwks_client", OutageJWKSClient())
+    token = jwt.encode(_claims(), private, algorithm="ES256")
+    with pytest.raises(HTTPException) as exc:
+        auth.get_current_user_id(_creds(token))
+    assert exc.value.status_code == 503
