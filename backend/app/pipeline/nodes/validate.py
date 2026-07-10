@@ -4,6 +4,8 @@ cross-checks every citation against the analyze_photos observation set, so
 citations are mechanically checkable instead of self-reported
 (SPEC.md - Quote schema and integrity)."""
 
+import os
+
 from langgraph.runtime import Runtime
 from pydantic import ValidationError
 
@@ -40,6 +42,16 @@ def validate(state: PipelineState, runtime: Runtime[Services]) -> dict:
                     f"line_items[{index}]: citation {citation!r} does not "
                     "refer to an analyzed photo"
                 )
+
+    # Demo-only, default off. Seeds exactly one retry so the recorded demo
+    # shows the honest retraction beat (SPEC.md - Verification 7): the first
+    # real draft is rejected once, so retry_started fires and the drafted rows
+    # dim; attempt 2 re-drafts for real and validates normally, leaving the
+    # final quote fully valid. Same mechanism the retry tests use, gated behind
+    # an env var that is never set in normal runs, so behavior is unchanged
+    # unless a human turns it on to record the video.
+    if os.environ.get("QUOTELENS_FORCE_RETRY") == "1" and state.retry_count == 0:
+        errors.append("forced demo retry (QUOTELENS_FORCE_RETRY)")
 
     update: dict = {
         "validation_errors": errors,
