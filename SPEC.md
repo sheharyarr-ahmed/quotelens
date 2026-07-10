@@ -1,8 +1,10 @@
 # QuoteLens · SPEC.md
 
-Cross-platform (iOS + Android) AI quoting app for trades and field-service operators. Walk the job site, capture photos and a spoken narration, and an agent pipeline produces an itemized, evidence-cited estimate the operator reviews and sends before leaving the driveway. Portfolio project. Closes the React Native gap, ships as a published Google Play listing, and reuses the mandatory-citation and self-correcting state machine patterns already proven in the portfolio.
+Cross-platform (iOS + Android) AI quoting app for trades and field-service operators. Walk the job site, capture photos and a spoken narration, and an agent pipeline produces an itemized, evidence-cited estimate the operator reviews and sends before leaving the driveway. Portfolio project. Closes the React Native gap, ships as a portfolio package — a recorded demo, a public GitHub repo, and a live web quote sample — and reuses the mandatory-citation and self-correcting state machine patterns already proven in the portfolio.
 
-v1.3.1 of this spec. Changes from v1.3: live verification (2026-07-09) surfaced a hosted-Supabase platform constraint on the settled Auth decision — email templates and the 2-emails/hour built-in send cap are locked until a custom SMTP provider is configured, and the default email OTP length is 8 while the settled UI accepts 6. The Auth decision under Mobile UI/UX now records custom SMTP as a hard prerequisite for email sign-in; the provider choice is settled in the milestone-3 interview. No product behavior changed.
+v1.4 of this spec. Changes from v1.3.1: the milestone-3 `/spec` interview (2026-07-10) re-scoped the release. QuoteLens ships as a **portfolio package** — a recorded demo video, a polished public GitHub repo/README, and a live web quote sample hosted on Vercel — **not** as a published app-store listing. Dropped from scope: Google Play submission, the EAS production Android App Bundle, the $25 developer fee, the store listing assets, cloud backend hosting, the privacy-policy page (a store-only requirement), and OTA updates. The backend runs locally on the Mac LAN for the demo, which is recorded on a physical iPhone (where the camera works); only the Next.js quote page is hosted (Vercel, reading hosted Supabase directly, so it is live and clickable without a hosted backend). The email-OTP SMTP provider is settled as **Brevo** and was configured live on 2026-07-10 (`backend/scripts/configure_email_smtp.py`); email sign-in now delivers a typable 6-digit code. See the new **Milestone 3 — portfolio release** decision. This is a distribution/deliverable re-scope; no product behavior changed.
+
+Changes from v1.3: live verification (2026-07-09) surfaced a hosted-Supabase platform constraint on the settled Auth decision — email templates and the 2-emails/hour built-in send cap are locked until a custom SMTP provider is configured, and the default email OTP length is 8 while the settled UI accepts 6. The Auth decision under Mobile UI/UX now records custom SMTP as a hard prerequisite for email sign-in; the provider choice is settled in the milestone-3 interview. No product behavior changed.
 
 Changes from v1.2.1: the mobile UI/UX interview mandated by "Repo and process" ran on 2026-07-07 and its settled decisions are recorded in the new **Mobile UI/UX** section under Decisions. Structural consequences: navigation is jobs-first with no tab bar, auth completes via emailed one-time code instead of a deep-linked magic link, styling is a plain StyleSheet token module (light-only), the review screen's waiting state is driven by realtime `agent_traces` inserts (one small migration), and dark mode / manual line-item creation / pause-resume narration move to Out of scope.
 
@@ -18,24 +20,24 @@ A worker opens the app on any phone, photographs the work area, records a voice 
 
 Success is demonstrated end-to-end when:
 
-1. The same codebase runs on an iOS simulator and a physical Android device with no platform-forked screens.
-2. QuoteLens is live on Google Play as an installable public listing. iOS remains simulator-only, disclosed honestly in the README.
+1. The same codebase runs on the iOS simulator and a physical iPhone with no platform-forked screens; Android is supported by the same Expo codebase and named in the README, not separately demoed.
+2. The deliverable is a portfolio package: a recorded demo video, a public GitHub repo with a portfolio-grade README, and a live web quote sample hosted on Vercel. No app-store distribution; the scope is disclosed honestly in the README.
 3. A real capture session for a painting job (3+ photos, 30 to 60 seconds of speech) produces a valid quote in under 90 seconds.
 4. Every line item carries at least one photo citation, and every citation refers to a photo the vision node actually analyzed. A quote with an uncited line item fails schema validation and never reaches the UI.
 5. Quote generation renders as live assembly: line items appear progressively with photo thumbnails attaching, driven by real pipeline events, not a fake staged animation over a finished result. If the retry edge fires, the UI shows it honestly: drafted items sweep into a dimmed revising state and the corrected items stream in fresh.
 6. Editing a quote on one device updates the open quote screen on a second device via Supabase Realtime within 2 seconds.
 7. The client quote page renders from a signed share link without authentication and the Accept action persists.
 8. The agent trace screen shows every pipeline node with input, output, duration, and token count.
-9. The 90-second demo video exists: one painter, one water-damaged bedroom, capture to sent quote, shot across an Android phone and an iOS simulator side by side.
+9. The 90-second demo video exists: one painter, one water-damaged bedroom, capture through to accepted quote, recorded on a physical iPhone with the client Accept shown in a desktop browser.
 
-Non-goals for success: App Store distribution, payment collection, offline-first sync, price learning. See Out of scope.
+Non-goals for success: app-store distribution (Apple App Store and Google Play), payment collection, offline-first sync, price learning. See Out of scope.
 
 ## Files
 
 ```
 quotelens/
 ├── SPEC.md
-├── README.md                          # architecture, honest limitations, Play Store link, demo GIF
+├── README.md                          # architecture, honest limitations, live web sample link, demo GIF
 ├── schema/
 │   └── quote.schema.json              # committed JSON Schema artifact, single source of truth
 │                                      #   for the Pydantic/Zod mirror tests on both sides
@@ -61,8 +63,8 @@ quotelens/
 │   │   └── lib/                       # supabase client (AsyncStorage-persisted session),
 │   │                                  #   zod schemas mirrored from backend, theme.ts tokens
 │   ├── __tests__/                     # schema mirror test vs schema/quote.schema.json, hook tests
-│   ├── app.json                       # Play Store identity: package id, versionCode, adaptive icon
-│   └── eas.json                       # EAS build profiles incl. production AAB for Play submission
+│   └── app.json                       # app identity: package id, adaptive icon, permission strings
+│                                      #   (no eas.json / AAB — portfolio package, not a store build, v1.4)
 ├── backend/                           # FastAPI, Python 3.11+
 │   ├── app/
 │   │   ├── main.py
@@ -80,11 +82,9 @@ quotelens/
 ├── web/                               # Next.js 16 App Router, client quote page only
 │   ├── app/q/[shareToken]/page.tsx    # public quote view + Accept action
 │   └── app/api/accept/route.ts
-├── store/                             # Play Store listing assets
-│   ├── listing.md                     # title, short + full description, category, contact
-│   ├── screenshots/                   # phone screenshots per Play requirements
-│   ├── feature-graphic/               # 1024x500, brand system
-│   └── privacy-policy.md              # served as a static page on the web app
+├── store/                             # descoped in v1.4 (no store listing). README screenshots/GIF
+│                                      #   live in the repo; listing.md, feature-graphic, and the
+│                                      #   privacy-policy page are dropped with Google Play
 └── supabase/
     └── migrations/                    # tables: profiles, price_books, price_book_items,
                                        #   jobs, captures, quotes, quote_line_items,
@@ -97,10 +97,10 @@ quotelens/
 
 ### Platform and distribution
 
-- **React Native with Expo, not bare RN.** Expo Router, expo-camera, expo-av cover the full capture surface. EAS free tier builds both platforms and produces the production Android App Bundle for Play submission. Ejecting is a documented escape hatch, not a v1 need.
-- **Google Play publication is in scope; Apple App Store is not.** One-time $25 Play developer fee is the single approved cash spend on this project, justified because a live store listing moves the project from "repo and video" to "installable product" and answers the store-link question mobile clients ask. Apple's $99/year fails the same cost-benefit test at portfolio stage. iOS ships as simulator demo, disclosed plainly. Play review lead time (several days to two weeks for new developer accounts, closed-testing requirements may apply) is treated as a schedule item, submission happens as soon as the manual E2E passes, not after polish.
-- **Demo scope is the painting trade.** The demo video, the seeded default price book, the store screenshots, and the README hero all follow one painter through one water-damaged bedroom. One story demos stronger than a generic multi-trade pitch. HVAC and landscaping price book templates still ship as seed data to prove the pattern generalizes, but no demo asset features them.
-- **Backend deploys to a free-tier host (Render, Fly, or Railway class), disclosed as a demo backend.** The only approved spend stays the $25 Play fee. Free tiers mean slow cold starts and modest RAM; the Play listing and the in-app empty state disclose "demo backend, may be paused" honestly rather than pretending production SLAs. The demo video is recorded against the local backend, where transcription runs at full quality. Alternatives considered: hosted transcription APIs (adds a paid dependency and revises the zero-API-spend rule), tunneled local backend (makes the public listing symbolic). Rejected in favor of a real public URL with honest disclosure.
+- **React Native with Expo, not bare RN.** Expo Router, expo-camera, expo-audio cover the full capture surface. The same codebase targets iOS and Android with no platform-forked screens; the demo runs on a physical iPhone (real camera) and the iOS simulator. Ejecting is a documented escape hatch, not a v1 need.
+- **Ships as a portfolio package, not an app-store listing (re-scoped in the v1.4 milestone-3 interview).** The deliverable is a recorded demo video, a public GitHub repo with a portfolio-grade README, and a live web quote sample on Vercel — the artifacts that carry a solo founder's work onto LinkedIn, a portfolio catalog, and vetting calls. A store listing is dropped: Google Play's $25 fee, identity verification, review lead time, and closed-testing plumbing are real cost for a portfolio piece whose audience reaches it through a link and a video, not a store search; Apple's App Store ($99/yr) fails the same test. Neither is pursued, and the README states the scope plainly. Alternatives considered (carried from v1.1–v1.3): a live Google Play closed/public listing (moves "repo and video" to "installable product," but the review overhead and developer accounts buy little for an artifact nobody installs from a store), a tunneled public backend behind a symbolic listing (a listing without substance). Rejected in favor of demo + repo + one hosted web sample.
+- **Demo scope is the painting trade.** The demo video, the seeded default price book, the README screenshots, and the README hero all follow one painter through one water-damaged bedroom. One story demos stronger than a generic multi-trade pitch. HVAC and landscaping price book templates still ship as seed data to prove the pattern generalizes, but no demo asset features them.
+- **Backend runs locally on the Mac LAN for the demo; only the web quote page is hosted (Vercel).** No cloud backend. The demo is recorded on a physical iPhone that reaches the Mac's FastAPI over WiFi (`EXPO_PUBLIC_API_URL` set to the Mac's LAN IP), so transcription and the pipeline run at full quality with zero hosting cost or cold starts. The Next.js quote page deploys to Vercel because it renders server-side straight from hosted Supabase by share token — it needs no backend, so it stays a live, clickable portfolio link, and `EXPO_PUBLIC_WEB_URL` points the app's share links at it. `SUPABASE_SERVICE_ROLE_KEY` is a server-only Vercel env var, never `NEXT_PUBLIC_`. Alternatives considered: also hosting FastAPI (Railway/Render give faster-whisper real RAM, but a recorded demo needs no reachable backend and it adds spend), everything on localhost incl. the web page (no clickable sample for the portfolio). CORS is not required — the RN app calls FastAPI directly (React Native does not enforce CORS) and the web Accept uses same-origin Next routes; add CORS only if a browser ever calls FastAPI directly.
 
 ### Pipeline
 
@@ -164,16 +164,16 @@ quotelens/
 
 **Auth**
 
-- **Passwordless email OTP, not a deep-linked magic link.** `signInWithOtp` emails a 6-digit code; the user types it into the app and `verifyOtp` establishes the session. Identical flow on an Android device, the iOS simulator, and EAS builds; no scheme/redirect configuration; recordable on a simulator with no mail client. Requires the Supabase email template to include the token, and the Supabase client gains AsyncStorage-backed session persistence (`@react-native-async-storage/async-storage`, new dependency). Alternatives considered: a true `quotelens://` deep-link magic link (per-environment redirect config, expo-linking auth handling, and awkward to complete on the exact machine the demo records on), link-plus-code fallback (two auth completion paths to build and test in a v1). Platform constraint discovered live (v1.3.1): hosted Supabase only allows editing email templates — and raising the 2-emails/hour built-in send cap — once a custom SMTP provider is configured, and defaults the email OTP length to 8; email sign-in therefore additionally requires custom SMTP, code-only `{{ .Token }}` templates in both Confirm signup and Magic Link, and Email OTP Length set to 6 (provider choice: milestone-3 interview). Until SMTP is configured, sign-in codes are minted via `auth.admin.generateLink` (`backend/scripts/mint_login_code.py`).
+- **Passwordless email OTP, not a deep-linked magic link.** `signInWithOtp` emails a 6-digit code; the user types it into the app and `verifyOtp` establishes the session. Identical flow on an Android device, the iOS simulator, and EAS builds; no scheme/redirect configuration; recordable on a simulator with no mail client. Requires the Supabase email template to include the token, and the Supabase client gains AsyncStorage-backed session persistence (`@react-native-async-storage/async-storage`, new dependency). Alternatives considered: a true `quotelens://` deep-link magic link (per-environment redirect config, expo-linking auth handling, and awkward to complete on the exact machine the demo records on), link-plus-code fallback (two auth completion paths to build and test in a v1). Platform constraint discovered live (v1.3.1): hosted Supabase only allows editing email templates — and raising the 2-emails/hour built-in send cap — once a custom SMTP provider is configured, and defaults the email OTP length to 8; email sign-in therefore additionally requires custom SMTP, code-only `{{ .Token }}` templates in both Confirm signup and Magic Link, and Email OTP Length set to 6 (provider choice: milestone-3 interview). Until SMTP is configured, sign-in codes are minted via `auth.admin.generateLink` (`backend/scripts/mint_login_code.py`). **Settled and configured in the v1.4 milestone-3 interview (2026-07-10):** the SMTP provider is **Brevo** (free 300/day, no domain — the owner's gmail verified as sender). `backend/scripts/configure_email_smtp.py` applies the custom-SMTP settings, code-only `{{ .Token }}` templates for both Magic Link and Confirm signup, and OTP length 6 to the hosted project via the Management API (idempotent, reads `BREVO_*` from `.env`). Verified end-to-end: a real 6-digit code is emailed and signs in. Brevo's free tier rewrites the From to `@<id>.brevosend.com`; a branded sending domain is future work.
 
 **Styling and theming**
 
 - **Plain RN StyleSheet with a `src/lib/theme.ts` token module** (colors seeded from the existing brand blues `#208AEF` / `#E6F4FE`, spacing, radii, type scale). Identical pixels on both platforms — success criterion #1 stays mechanical. The scaffold's `@expo/ui` and `expo-glass-effect` are not used by screens: the former renders genuinely divergent SwiftUI/Jetpack UI and the latter is iOS-only. Icons via `@expo/vector-icons` (expo-symbols is iOS-only). Alternatives considered: NativeWind (a babel/metro plugin plus a Tailwind-v4 compatibility story added to a working strict-TS scaffold mid-project), leaning into @expo/ui (defensible only by amending success criterion #1).
-- **Light-only in v1.** Single palette, `userInterfaceStyle` locked to `"light"`. One look across the demo video, Play screenshots, and both platforms; every UI state (dimmed retraction, invalid rows, banners) QAs once. Dark mode is named in README as future work. Alternative considered: dual palettes off `useColorScheme()` (cheap-ish with tokens, but doubles the QA surface in an all-UI milestone while store assets still show one mode).
+- **Light-only in v1.** Single palette, `userInterfaceStyle` locked to `"light"`. One look across the demo video, README screenshots, and both platforms; every UI state (dimmed retraction, invalid rows, banners) QAs once. Dark mode is named in README as future work. Alternative considered: dual palettes off `useColorScheme()` (cheap-ish with tokens, but doubles the QA surface in an all-UI milestone while store assets still show one mode).
 
 ### Data flow, auth, and access
 
-- **Media uploads go direct from the phone to Supabase Storage.** The capture screen uploads photos and audio to the private bucket using the user's Supabase session, under RLS-scoped paths. POST /captures registers capture metadata rows; POST /generate takes storage paths and job ID. The backend reads media via service role and signed URLs. No large files transit FastAPI, uploads parallelize, and the free-tier backend stays light. Alternative considered: multipart through the API (one trust boundary, but doubles bandwidth through the weakest link and risks timeouts on large HEIC/audio bodies).
+- **Media uploads go direct from the phone to Supabase Storage.** The capture screen uploads photos and audio to the private bucket using the user's Supabase session, under RLS-scoped paths. POST /captures registers capture metadata rows; POST /generate takes storage paths and job ID. The backend reads media via service role and signed URLs. No large files transit FastAPI, uploads parallelize, and the backend stays light. Alternative considered: multipart through the API (one trust boundary, but doubles bandwidth through the weakest link and risks timeouts on large HEIC/audio bodies).
 - **FastAPI verifies the Supabase JWT and acts via service role.** Mobile sends its Supabase access token in the Authorization header; a FastAPI dependency verifies the signature locally and extracts user_id; all backend DB access uses the service-role key with every query explicitly scoped to the verified user_id. RLS still guards all direct-from-device access. Alternative considered: passing the user JWT through to supabase-py so RLS applies to backend queries (no scoping bugs possible, but pipeline writes to traces and events exceed user policies, forcing a mixed-mode client anyway).
 - **Supabase for auth, Postgres, Storage, Realtime.** Passwordless email auth only, completed via OTP code (v1.3; see Mobile UI/UX — Auth). RLS on every table. Photos and audio in a private bucket behind signed URLs. The Realtime channel powers both live assembly and the two-device sync demo shot.
 - **Share link is an unguessable token, not auth.** The client quote page is public by design, scoped to one quote via a random share token. Accept writes a quote_events row. No client accounts in v1.
@@ -181,14 +181,17 @@ quotelens/
 
 ### Repo and process
 
-- **Play listing copy follows brand voice rules.** No em-dashes, no slop phrases, no fabricated ratings or user counts, "portfolio project by SheryLabs" stated in the full description. A privacy policy page is a Play requirement and ships as a static page on the web app.
+- **README and LinkedIn/portfolio copy follow brand voice rules.** No em-dashes, no slop phrases, no fabricated ratings or user counts; "portfolio project by SheryLabs" stated plainly, source public on GitHub. (v1.4: the Play listing copy and the privacy-policy page are dropped with store distribution — the privacy page was a store-only requirement.)
 - **Monorepo, pnpm workspaces for mobile + web, uv for backend.** One repo, one commit history, one verify.sh.
 - **verify.sh gates on: backend pytest, mobile tsc --noEmit, mobile eslint.** Playwright E2E on the web quote page only. No mobile E2E framework in v1, cost exceeds catch-rate at this scale.
 - **Mobile UI/UX is specified before it is built, via the `/spec` interview.** Completed 2026-07-07: the interview ran at the start of the mobile-screens phase and its settled decisions are the **Mobile UI/UX** section above (this v1.3 amendment). Implementation proceeds against that section; any UI/UX question it does not answer gets resolved by a follow-up amendment, not an in-code improvisation.
 
 ## Out of scope
 
-- Apple App Store distribution. iOS is simulator-demo only, stated in README and all public copy.
+- All app-store distribution — Apple App Store **and Google Play** (dropped v1.4). The app is demoed on a physical iPhone and the iOS simulator; Android runs the same Expo code but is not separately shipped. Stated in the README and all public copy.
+- EAS production build / Android App Bundle, any store submission, and OTA updates (expo-updates / EAS Update). No `eas.json`, no `owner`/projectId setup in v1 (dropped v1.4).
+- Cloud backend hosting. The FastAPI backend runs locally on the Mac LAN for the demo; only the Next.js quote page is hosted (Vercel), reading hosted Supabase directly (dropped v1.4).
+- A privacy-policy page. It was a Google Play requirement only; with no store, it is dropped (v1.4).
 - Payment processing of any kind. Accept records agreement only. Stripe deposit flow is a documented integration path, never demoed as working.
 - Offline-first sync. Capture requires connectivity. A capture queue for flaky connections is future work, named in README.
 - Price book learning or historical-quote suggestions.
@@ -199,8 +202,8 @@ quotelens/
 - Dark mode. Light-only palette in v1 (v1.3); named as future work in README.
 - Manual line-item creation in the app. The pipeline is the only line-item author, preserving the citation invariant; edit and delete only (v1.3).
 - Pause/resume narration. One continuous recording per capture session; multi-clip audio would require pipeline changes (v1.3).
-- Play Store growth work: ASO, paid installs, review solicitation. The listing exists as proof, not as an acquisition channel.
-- Any claim of paying users or client traction. Portfolio artifact, published on Play, source public. That is the claim, in full.
+- Any growth or acquisition work: ASO, paid installs, review solicitation, marketing funnels. The demo and repo exist as proof of capability, not as an acquisition channel.
+- Any claim of paying users or client traction. Portfolio artifact — source public on GitHub, demonstrated on video, one hosted web sample. That is the claim, in full.
 
 ## Verification
 
@@ -208,11 +211,11 @@ The end-to-end check that must pass before this project is called done:
 
 1. `cd backend && pytest -q` green, including: schema rejects a line item with empty photo_citations, validate rejects a citation naming a photo ID absent from the observation set, retry edge fires on a seeded invalid draft and succeeds on second pass, retry cap halts at 2 and surfaces a `failed` quote with the draft preserved, regenerate reuses cached transcript and observations without re-running transcribe or analyze_photos, pipeline emits one `line_item_drafted` event per line item in order plus `retry_started` on the forced-retry path, and the Pydantic quote schema regenerates byte-identical to `schema/quote.schema.json`.
 2. `cd mobile && pnpm tsc --noEmit && pnpm lint` clean. Schema mirror test asserts the Zod schema matches `schema/quote.schema.json` field-for-field.
-3. Manual E2E on both platforms, recorded as the demo asset: launch on a physical Android device and an iOS simulator, sign in via emailed one-time code, create a painting job, capture 3 photos plus a 45-second narration of a water-damaged bedroom, generate, watch line items assemble live with photo thumbnails attaching, receive a quote where every line cites a photo and at least one line shows the inferred flag with a vision-estimated quantity, edit a quantity on device A and watch it update on device B within 2 seconds, send, open the share link in a desktop browser, accept, confirm the quote_events row and the status change on both devices.
+3. Manual E2E recorded as the demo asset: on a physical iPhone (with the iOS simulator as the second device for the cross-device shot), sign in via the emailed 6-digit code, create a painting job, capture 3 photos plus a 45-second narration of a water-damaged bedroom, generate, watch line items assemble live with photo thumbnails attaching, receive a quote where every line cites a photo and at least one line shows the inferred flag with a vision-estimated quantity, edit a quantity on the iPhone and watch it update on the second device within 2 seconds, send, open the share link in a desktop browser, accept, confirm the quote_events row and the status change on both.
 4. `pnpm playwright test` green on the web quote page: renders from share token, Accept persists, invalid token 404s.
 5. Agent trace screen shows all seven nodes for the demo quote with non-zero durations, token counts on the LLM nodes, and the quote_events timeline aligns with the live assembly the video captured, including the seeded retry retraction.
-6. Production AAB built via EAS, submitted to Google Play, and the listing is live and installable against the deployed free-tier backend. Store listing copy passes the brand voice rules, links the public repo, and discloses the demo backend.
-7. The 90-second painter demo video is recorded against the local backend, following the story arc: walkthrough capture, live assembly with one visible retry retraction, cross-device edit, client accept.
-8. README limitations section explicitly names: fire-and-forget generation, no payments, no offline, seeded price books, demo-scale transcription on the deployed tier, free-tier backend cold starts, iOS simulator-only. Each with its upgrade path in one sentence.
+6. The Next.js quote page is deployed to Vercel and live: a public sample quote renders from its share token with no auth, the Accept action persists against hosted Supabase, and `SUPABASE_SERVICE_ROLE_KEY` is set server-only. `EXPO_PUBLIC_WEB_URL` points the app's share links at the deployed URL.
+7. The 90-second painter demo video is recorded on the physical iPhone against the Mac-LAN backend, following the story arc: walkthrough capture, live assembly with one visible retry retraction, cross-device edit, client accept in the browser.
+8. The portfolio-grade README exists: architecture, the seven-node pipeline, the hard invariants, run instructions, an embedded demo GIF, and the live web sample link. Its limitations section explicitly names: fire-and-forget generation, no payments, no offline, seeded price books, backend runs locally (not hosted), Android supported by the same Expo code but demoed on iOS. Each with its upgrade path in one sentence.
 
-verify.sh wires checks 1 and 2 into the Stop hook so build sessions self-gate. Checks 3 through 8 are the human acceptance pass; the repo flips public after check 3, the Play submission (check 6) starts immediately after, and the LinkedIn cycle waits for checks 6 and 7.
+verify.sh wires checks 1 and 2 into the Stop hook so build sessions self-gate. Checks 3 through 8 are the human acceptance pass: the repo flips public after check 3, the web sample (check 6) deploys alongside, and the LinkedIn/portfolio cycle waits for checks 6 and 7 — the live sample link and the demo video.
