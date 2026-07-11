@@ -192,9 +192,13 @@ def main() -> int:
                 f"({existing[0]['user_id']}); refusing to overwrite."
             )
         # Reset a possibly-burned sample: drop the accept event and old lines,
-        # then rebuild and flip back to 'sent'. Child rows scoped by quote_id.
+        # then rebuild and flip back to 'sent'. quote_id ownership was just
+        # verified; line items also carry user_id, so scope that delete by it
+        # too (quote_events has no user_id column, so it stays quote_id-keyed).
         client.table("quote_events").delete().eq("quote_id", quote_id).execute()
-        client.table("quote_line_items").delete().eq("quote_id", quote_id).execute()
+        client.table("quote_line_items").delete().eq("quote_id", quote_id).eq(
+            "user_id", user_id
+        ).execute()
         client.table("quotes").update(
             {"status": "sent", "subtotal_cents": SUBTOTAL_CENTS, "job_id": job_id}
         ).eq("id", quote_id).eq("user_id", user_id).execute()
