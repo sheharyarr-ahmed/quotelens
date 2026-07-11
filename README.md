@@ -11,7 +11,7 @@ Portfolio project by Shery Labs. Source is public; the app is demonstrated on
 video and through one live hosted web quote. It is not distributed through an
 app store. See [Scope and honesty](#scope-and-honesty).
 
-**Live web sample:** https://&lt;your-vercel-url&gt;/q/sample-water-damaged-bedroom
+**Live web sample:** https://quotelens-ten.vercel.app/q/sample-water-damaged-bedroom
 &nbsp;(a real quote rendered server-side from hosted Supabase, no login)
 
 <!-- Demo GIF is added after the video is recorded (see docs/DEMO_RUNBOOK.md). -->
