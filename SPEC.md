@@ -88,9 +88,6 @@ quotelens/
 ├── web/                               # Next.js 16 App Router, client quote page only
 │   ├── app/q/[shareToken]/page.tsx    # public quote view + Accept action
 │   └── app/api/accept/route.ts
-├── store/                             # descoped in v1.4 (no store listing). Screenshots live in
-│                                      #   docs/screenshots (v1.5); listing.md, feature-graphic, and
-│                                      #   the privacy-policy page are dropped with Google Play
 └── supabase/
     └── migrations/                    # tables: profiles, price_books, price_book_items,
                                        #   jobs, captures, quotes, quote_line_items,

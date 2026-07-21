@@ -20,13 +20,16 @@ Writes to the live DB via the service role. Spends no tokens (no pipeline).
 """
 
 import argparse
+import os
 import pathlib
 import sys
 
 BACKEND_ROOT = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(BACKEND_ROOT))
 
-DEFAULT_EMAIL = "sheharyar.softwareengineer@gmail.com"
+# Whose account owns the public sample. No hardcoded default: an unflagged run
+# in a clone must not mutate whoever happened to publish the original sample.
+DEFAULT_EMAIL = os.environ.get("QUOTELENS_DEMO_EMAIL")
 REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
 
 # Fixed, deliberately-public token -> a stable README/app share link. The token
@@ -169,7 +172,9 @@ def _line_item_rows(quote_id: str, user_id: str) -> list[dict]:
 def main() -> int:
     _load_env()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--email", default=DEFAULT_EMAIL)
+    parser.add_argument(
+        "--email", default=DEFAULT_EMAIL, required=DEFAULT_EMAIL is None
+    )
     args = parser.parse_args()
 
     client = _client()

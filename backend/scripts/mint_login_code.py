@@ -17,7 +17,9 @@ import sys
 
 from supabase import create_client
 
-DEFAULT_EMAIL = "sheharyar.softwareengineer@gmail.com"
+# Whose sign-in code to mint. No hardcoded default: this script mints a valid
+# OTP for whatever address it is given, so a clone must name its own.
+DEFAULT_EMAIL = os.environ.get("QUOTELENS_DEMO_EMAIL")
 
 
 def _load_env() -> None:
@@ -35,6 +37,11 @@ def _load_env() -> None:
 def main() -> None:
     _load_env()
     email = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_EMAIL
+    if not email:
+        sys.exit(
+            "usage: mint_login_code.py <email>  "
+            "(or set QUOTELENS_DEMO_EMAIL in .env)"
+        )
     client = create_client(
         os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"]
     )

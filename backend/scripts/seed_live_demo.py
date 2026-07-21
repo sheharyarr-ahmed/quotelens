@@ -19,6 +19,7 @@ Spends real tokens and writes to the live DB (same as integration_run.py).
 """
 
 import argparse
+import os
 import pathlib
 import sys
 import time
@@ -27,7 +28,9 @@ BACKEND_ROOT = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(BACKEND_ROOT))
 
 FIXTURES = BACKEND_ROOT / "tests" / "fixtures"
-DEFAULT_EMAIL = "sheharyar.softwareengineer@gmail.com"
+# Whose account the demo writes into. No hardcoded default: an unflagged run in
+# a clone must not target whoever happened to record the walkthrough.
+DEFAULT_EMAIL = os.environ.get("QUOTELENS_DEMO_EMAIL")
 
 PHOTOS = [  # (photo_id, fixture filename) - photo_id is derived from the stem on read-back
     ("photo-water-stain", "photo-water-stain.jpg"),
@@ -237,7 +240,9 @@ def main() -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_seed = sub.add_parser("seed", help="seed media + create the quote (generating)")
-    p_seed.add_argument("--email", default=DEFAULT_EMAIL)
+    p_seed.add_argument(
+        "--email", default=DEFAULT_EMAIL, required=DEFAULT_EMAIL is None
+    )
     p_seed.add_argument("--job-id", default=None)
     p_seed.set_defaults(func=cmd_seed)
 

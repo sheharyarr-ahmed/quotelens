@@ -24,3 +24,6 @@ out/
 
 # os / editor
 .DS_Store
+
+# claude code local state
+.claude/scheduled_tasks.lock

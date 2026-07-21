@@ -48,16 +48,17 @@ Monorepo, one commit history, one verification gate.
 | `web/` | Next.js 16 App Router, React 19 | Public client quote page and Accept action |
 | `backend/` | FastAPI, LangGraph, Python 3.12 (uv) | The seven-node agent pipeline |
 | `supabase/` | Postgres 17, Storage, Realtime, Auth | Data, media, realtime transport, auth (RLS on every table) |
-| `schema/` | JSON Schema artifact | Single source of truth for the Pydantic and Zod mirrors |
+| `schema/` | JSON Schema artifact | Generated from the Pydantic models; the Zod mirror is tested against it |
 
 **Data flow.** Photos and audio upload directly from the phone to a private
 Supabase Storage bucket under row-level-security-scoped paths. The mobile app
 sends its Supabase JWT to FastAPI, which verifies the signature against the
 project JWKS and acts through the service role with every query scoped to the
-verified user. The backend never proxies large media. Realtime rides Supabase
-`postgres_changes` on two tables: `quote_events` (live assembly) and
-`quote_line_items` (cross-device edit sync), so a second device updates without
-FastAPI in the loop.
+verified user. Nothing large is proxied through the API on the client path; the
+pipeline fetches media server-side from signed URLs. Realtime rides Supabase
+`postgres_changes` on four tables: `quote_events` (live assembly), `agent_traces`
+(stage ticker), `quotes` (status and Accepted sync), and `quote_line_items`
+(cross-device edit sync), so a second device updates without FastAPI in the loop.
 
 ## The seven-node pipeline
 
@@ -93,8 +94,9 @@ flowchart TD
 | `validate` | pure code, no LLM | schema + citation cross-check; fires the retry edge |
 | `compile_quote` | pure code, no LLM | the final quote, re-validated |
 
-Every node writes an `agent_traces` row (input, output, duration, token counts),
-which drives both the review screen's stage ticker and the trace viewer.
+Every node writes an `agent_traces` row (input, output, duration, and token
+counts for the LLM nodes), which drives both the review screen's stage ticker and
+the trace viewer.
 
 ## Hard invariants
 
@@ -142,26 +144,31 @@ an Anthropic API key.
 # 1. Install JS workspaces from the repo root (.npmrc pins node-linker=hoisted).
 pnpm install
 
-# 2. Configure env: copy the template and fill in your values.
+# 2. Activate the committed git hooks (rejects generator trailers in messages).
+git config core.hooksPath .githooks
+
+# 3. Configure env: copy the template and fill in your values.
 cp .env.example .env      # see the file for every variable and what reads it
-
-# 3. Backend (FastAPI + pipeline).
 set -a && source .env && set +a
-cd backend && uv sync
-uv run uvicorn app.main:app --port 8000
 
-# 4. Mobile (Expo). Press i for the iOS simulator, or scan the QR in Expo Go.
-cd mobile && pnpm expo start
+# 4. Backend (FastAPI + pipeline). Each step below runs from the repo root.
+uv sync --project backend
+uv run --project backend uvicorn app.main:app --port 8000
 
-# 5. Web (public quote page).
-cd web && pnpm dev
+# 5. Mobile (Expo). Press i for the iOS simulator, or scan the QR in Expo Go.
+pnpm -C mobile expo start
+
+# 6. Web (public quote page).
+pnpm -C web dev
 ```
 
 The database schema and seed data live in `supabase/migrations/` (apply with the
 Supabase CLI). Email sign-in needs custom SMTP configured on the project
 (`backend/scripts/configure_email_smtp.py`); without it, mint a code with
 `backend/scripts/mint_login_code.py`. To render a stable public sample quote for
-the web page, run `backend/scripts/seed_web_sample.py`.
+the web page, run `backend/scripts/seed_web_sample.py`. All three demo scripts
+act on the account named by `QUOTELENS_DEMO_EMAIL` (or `--email`), and refuse to
+run without one, so a clone never writes into somebody else's project.
 
 ### Verification
 
@@ -183,9 +190,9 @@ retraction, see [`docs/SCREENSHOT_RUNBOOK.md`](docs/SCREENSHOT_RUNBOOK.md).
 
 ## Screenshots
 
-One continuous run on an iPhone 17 Pro simulator against live services: real
-Anthropic vision and text models, faster-whisper transcription, hosted Supabase,
-and the deployed Vercel quote page. 49.2 seconds end to end. Full set in
+One run on an iPhone 17 Pro simulator against live services: real Anthropic
+vision and text models, faster-whisper transcription, hosted Supabase, and the
+deployed Vercel quote page. The pipeline completed in 49.2 seconds. Full set in
 [`docs/screenshots/`](docs/screenshots/).
 
 | | |
@@ -193,14 +200,17 @@ and the deployed Vercel quote page. 49.2 seconds end to end. Full set in
 | ![Seven-stage pipeline ticker, three stages complete](docs/screenshots/03-stage-ticker.png) | ![Line items streaming in with the subtotal mid-roll](docs/screenshots/04-live-assembly.png) |
 | **Pipeline ticker.** Driven by real `agent_traces` inserts, not a timer. | **Live assembly.** Rows arrive as the pipeline emits them; the subtotal is caught mid-roll at $853.74. |
 | ![Drafted rows dimmed with struck-through totals under a Revising draft banner](docs/screenshots/05-retry-retraction.png) | ![Agent trace listing pipeline nodes with durations and token counts](docs/screenshots/13-agent-trace.png) |
-| **Retry retraction.** Validation rejected the draft, so the UI retracts it in the open rather than hiding the correction. | **Agent trace.** Every node with its real duration and token counts, retry attempts grouped. |
+| **Retry retraction.** One validation failure is deliberately seeded for the demo (`QUOTELENS_FORCE_RETRY=1`); the retraction, retry and re-draft that follow are the real code path. | **Agent trace.** Every node with its real duration and token counts. The list accumulates every attempt made against the quote, including two runs that died on a network timeout before the successful one. |
 
 The quoting pipeline is what these show. The capture UI is not pictured: the iOS
 simulator has no camera, so the walkthrough seeds its photos and narration from
 the committed fixtures and runs the real pipeline over them. The capture upload
 path (direct-to-Storage upload, metadata registration, RLS-scoped signed URLs) is
 covered by `mobile/scripts/live-verify.ts`. The capture screen's rendering is not
-covered by a test, and this walkthrough does not prove it.
+covered by a test, and this walkthrough does not prove it. Generation here is
+also triggered by `backend/scripts/seed_live_demo.py` calling the graph directly
+rather than by the app's Generate button, so the app to `POST /generate` hop is
+covered by `live-verify.ts` and the backend tests instead of by these images.
 
 ## Limitations
 
@@ -252,6 +262,7 @@ show, and no build has been tested on a physical device. There are no paying
 users and no client traction claimed. That is the claim in full: source public,
 demonstrated in screenshots of a real run, one live web sample.
 
-## License
+## Ownership
 
-Portfolio project by Shery Labs.
+Portfolio project by Shery Labs. All rights reserved; no license is granted for
+reuse or redistribution. The source is public to be read and evaluated.
