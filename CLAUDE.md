@@ -2,7 +2,7 @@
 
 Cross-platform (iOS + Android) AI quoting app for trades. **SPEC.md is the single source of truth** for all architecture decisions — read it before changing anything; the spec-reviewer agent (`.claude/agents/spec-reviewer.md`) reviews diffs against it and flags hard-invariant violations.
 
-## Current state (after session 7, 2026-07-15)
+## Current state (after session 8, 2026-07-21)
 
 Monorepo scaffold + complete backend pipeline (session 1, mocked; adversarial review done). Session 2 stood up real infra: hosted Supabase project `quotelens` (ref `nxuchpuslgkuawfliqsj`, ap-northeast-1, Postgres 17) linked, both migrations applied/verified remotely (9 tables RLS-enabled, seeded price books, private `captures` bucket), root `.env` (gitignored) fully populated with verified keys. Model ids pinned to `claude-sonnet-5` (vision) and `claude-haiku-4-5-20251001` (text).
 
@@ -20,7 +20,17 @@ Session 7 (2026-07-11/15) built **milestone 3 in plan mode against SPEC v1.4**. 
 
 **Phase D (check 8) — pending:** embed `docs/demo.gif` in `README.md` (live sample link already filled); owner creates the GitHub repo, pushes, and flips it public **after check 3**. A leftover empty Vercel project `web` (from the first auto-link) is harmless; delete in the dashboard if desired.
 
-Acceptance bar: SPEC.md **Verification** checks 3, 6, 7, 8 (check 6 DONE). Backend hosting, EAS/AAB, and any store work are explicitly out of scope (SPEC v1.4).
+Session 8 (2026-07-21) **killed the physical-iPhone demo and amended SPEC to v1.5.** The iPhone shoot was attempted twice and blocked by environment, not product: the office Wi-Fi client-isolates devices, so the phone could never reach the Mac's FastAPI. The owner cancelled it. The demo artifact is now a **screenshot walkthrough captured on the iOS simulator against localhost** — no video, no GIF, no LAN, no hotspot. **13 stills committed to `docs/screenshots/`** (also in `~/Downloads/quote-lens/`) from one continuous run: 49.2s, 5 line items each citing a photo, 1 unpriced, forced retry retraction caught mid-run, Accept driven through the deployed Vercel API with the realtime banner syncing back. `docs/DEMO_RUNBOOK.md` is now **`docs/SCREENSHOT_RUNBOOK.md`** (rewritten for the simulator flow); README embeds the walkthrough and its broken `docs/demo.gif` embed is gone.
+
+**Backend bug found and fixed** (`e79dff2`): `transcription.py` and `claude.py` fetched signed Storage URLs with bare `httpx.get`, inheriting httpx's 5s default; measured egress at 8.3s for a 27KB photo, so slow-but-healthy links aborted whole pipeline runs. Both now use `MEDIA_FETCH_TIMEOUT = 60.0`.
+
+**SPEC v1.5 acceptance is now checks 3 through 9** (was 3 through 8). Check 6 (Vercel) is DONE and was left byte-identical. New check 9 runs `live-verify.ts` — it is the evidence behind criterion 6 now that the two-device still is dropped. A spec review of the v1.5 diff caught three honesty defects that are now fixed (`85b0cd7`): the amendment had claimed the capture UI "is covered by tests" (it is not — no capture-UI test exists; `live-verify.ts` covers the capture *upload path*), claimed DB rows plus stills "provably" rule out a staged animation (they cannot — stills carry no timing), and dropped criterion 3's input volumes and 90s bound. Checks 3, 5 and 7 are now pinned to **one `quote_id`** so a walkthrough cannot be stitched from several runs.
+
+**Simulator screenshot technique** (repeatable, see the runbook): `xcrun simctl io booted screenshot`; `xcrun simctl status_bar booted override --time "9:41" ...`; Expo Go's floating **Tools** gear must be toggled off (dev menu → Tools button) or it lands in every frame, and the dev menu without the gear is **⌃⌘Z**. Transient states are caught by burst-capturing during the run and locating the frame by scanning for the `warningLight` `#FEF3C7` banner with Pillow. **UI automation is not available**: `osascript` cannot send keystrokes or clicks because Ghostty lacks macOS Accessibility, so the owner taps and the assistant captures. Backend and Metro launched via assistant `run_in_background` **did survive** yields this session, contrary to the older warning below.
+
+Remaining: **Phase D** — owner creates the GitHub repo, pushes, flips it public (SPEC:230 still gates that on check 3, which the screenshot walkthrough now satisfies).
+
+Acceptance bar: SPEC.md **Verification** checks 3 through 9 (check 6 DONE). Backend hosting, EAS/AAB, any store work, a recorded video, and any physical-device demo are explicitly out of scope (SPEC v1.5).
 
 ## Layout
 
@@ -36,7 +46,7 @@ Acceptance bar: SPEC.md **Verification** checks 3, 6, 7, 8 (check 6 DONE). Backe
 - Backend only: `cd backend && uv run pytest -q`
 - Mobile only: `cd mobile && pnpm exec tsc --noEmit && pnpm exec eslint . && pnpm exec jest`
 - Live end-to-end (needs uvicorn: `set -a && source .env && set +a && cd backend && uv run uvicorn app.main:app --port 8000`): `cd mobile && set -a && source ../.env && set +a && pnpm exec tsx scripts/live-verify.ts`
-- **Physical-iPhone demo backend** — run in the **owner's own terminal** (assistant `run_in_background` procs get SIGTERM-reaped when it yields), bound to all interfaces: `set -a && source .env && set +a && cd backend && QUOTELENS_FORCE_RETRY=1 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000`. The office Wi-Fi **client-isolates** devices (phone can't reach the Mac) — use the **iPhone Personal Hotspot** and set `EXPO_PUBLIC_API_URL=http://<mac-hotspot-ip>:8000` in `mobile/.env`, then `pnpm expo start --clear`.
+- **Screenshot walkthrough** (SPEC v1.5 checks 3 and 7) — simulator only, backend on localhost; full procedure in `docs/SCREENSHOT_RUNBOOK.md`. `mobile/.env` keeps `EXPO_PUBLIC_API_URL=http://localhost:8000`. Drive the pipeline with `QUOTELENS_FORCE_RETRY=1 uv run python scripts/seed_live_demo.py run <quote_id>` — the flag must be on **that** command, since the script calls `graph.invoke` in-process and never goes through uvicorn.
 - Web E2E: `cd web && set -a && source ../.env && set +a && pnpm test:e2e` (Playwright seeds and removes its own rows; web tsc via `pnpm -C web typecheck`)
 - Install JS deps from the **repo root** (`pnpm install`); `.npmrc` pins `node-linker=hoisted` (React Native requires it).
 - Supabase CLI: run `set -a && source .env && set +a` first — the keychain credential from `supabase login` is corrupt on this machine, and `SUPABASE_ACCESS_TOKEN` from `.env` takes precedence over it.
