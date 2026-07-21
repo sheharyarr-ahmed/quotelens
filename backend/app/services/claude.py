@@ -5,6 +5,10 @@ import httpx
 
 from app.pipeline.schemas import TokenUsage
 
+# Signed-Storage photo fetches, not API calls: httpx's 5s default aborts
+# analyze_photos whenever Storage egress is slow, failing the whole run.
+MEDIA_FETCH_TIMEOUT = 60.0
+
 
 class AnthropicLLM:
     """Claude client for the pipeline's LLM nodes. Model ids come from env
@@ -53,7 +57,7 @@ class AnthropicLLM:
     def analyze_image_json(
         self, *, prompt: str, image_url: str, model: str, schema: dict | None = None
     ) -> tuple[dict, TokenUsage]:
-        image_bytes = httpx.get(image_url).content
+        image_bytes = httpx.get(image_url, timeout=MEDIA_FETCH_TIMEOUT).content
         import base64
 
         response = self.client.messages.create(

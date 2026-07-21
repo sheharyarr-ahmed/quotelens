@@ -2,6 +2,10 @@ import os
 
 from app.pipeline.schemas import Transcript
 
+# Signed-Storage media fetches, not API calls: httpx's 5s default aborts a
+# walkthrough recording whenever Storage egress is slow, failing the whole run.
+MEDIA_FETCH_TIMEOUT = 60.0
+
 
 class FasterWhisperTranscription:
     """In-process transcription. WHISPER_MODEL sizes the model per deploy:
@@ -29,7 +33,8 @@ class FasterWhisperTranscription:
 
             import httpx
 
-            source = io.BytesIO(httpx.get(audio_path).content)
+            response = httpx.get(audio_path, timeout=MEDIA_FETCH_TIMEOUT)
+            source = io.BytesIO(response.content)
         segments, info = model.transcribe(source)
         text = " ".join(segment.text.strip() for segment in segments)
         return Transcript(text=text, duration_seconds=info.duration)
