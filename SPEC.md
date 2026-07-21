@@ -39,6 +39,7 @@ Non-goals for success: app-store distribution (Apple App Store and Google Play),
 ```
 quotelens/
 ├── SPEC.md
+├── LICENSE                            # MIT
 ├── README.md                          # architecture, honest limitations, live web sample link,
 │                                      #   embedded screenshot walkthrough
 ├── docs/

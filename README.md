@@ -262,7 +262,6 @@ show, and no build has been tested on a physical device. There are no paying
 users and no client traction claimed. That is the claim in full: source public,
 demonstrated in screenshots of a real run, one live web sample.
 
-## Ownership
+## License
 
-Portfolio project by Shery Labs. All rights reserved; no license is granted for
-reuse or redistribution. The source is public to be read and evaluated.
+MIT. See [LICENSE](LICENSE). Portfolio project by Shery Labs.
