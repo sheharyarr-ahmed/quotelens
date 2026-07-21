@@ -7,15 +7,14 @@ model actually analyzed, every price comes from a seeded price book (never
 invented), and the quote streams into the review screen line by line as the
 pipeline emits it.
 
-Portfolio project by Shery Labs. Source is public; the app is demonstrated on
-video and through one live hosted web quote. It is not distributed through an
-app store. See [Scope and honesty](#scope-and-honesty).
+Portfolio project by Shery Labs. Source is public; the app is demonstrated in
+screenshots of a real run and through one live hosted web quote. It is not
+distributed through an app store. See [Scope and honesty](#scope-and-honesty).
 
 **Live web sample:** https://quotelens-ten.vercel.app/q/sample-water-damaged-bedroom
 &nbsp;(a real quote rendered server-side from hosted Supabase, no login)
 
-<!-- Demo GIF is added after the video is recorded (see docs/DEMO_RUNBOOK.md). -->
-![QuoteLens demo](docs/demo.gif)
+![A completed QuoteLens quote: five line items, each carrying photo citations, one flagged inferred and one flagged unpriced](docs/screenshots/06-quote-completed.png)
 
 ---
 
@@ -149,10 +148,10 @@ cp .env.example .env      # see the file for every variable and what reads it
 # 3. Backend (FastAPI + pipeline).
 set -a && source .env && set +a
 cd backend && uv sync
-uv run uvicorn app.main:app --port 8000        # add --host 0.0.0.0 for a LAN device
+uv run uvicorn app.main:app --port 8000
 
-# 4. Mobile (Expo).
-cd mobile && pnpm expo start                    # scan the QR in Expo Go
+# 4. Mobile (Expo). Press i for the iOS simulator, or scan the QR in Expo Go.
+cd mobile && pnpm expo start
 
 # 5. Web (public quote page).
 cd web && pnpm dev
@@ -179,9 +178,29 @@ at two with the draft preserved, regenerate reuses the cached transcript and
 observations, and the Pydantic schema regenerates byte-identical to the
 committed artifact.
 
-For the demo walkthrough (physical iPhone against the Mac-LAN backend, including
-the retry retraction and the cross-device edit), see
-[`docs/DEMO_RUNBOOK.md`](docs/DEMO_RUNBOOK.md).
+To reproduce the screenshot walkthrough yourself, including the forced retry
+retraction, see [`docs/SCREENSHOT_RUNBOOK.md`](docs/SCREENSHOT_RUNBOOK.md).
+
+## Screenshots
+
+One continuous run on an iPhone 17 Pro simulator against live services: real
+Anthropic vision and text models, faster-whisper transcription, hosted Supabase,
+and the deployed Vercel quote page. 49.2 seconds end to end. Full set in
+[`docs/screenshots/`](docs/screenshots/).
+
+| | |
+|---|---|
+| ![Seven-stage pipeline ticker, three stages complete](docs/screenshots/03-stage-ticker.png) | ![Line items streaming in with the subtotal mid-roll](docs/screenshots/04-live-assembly.png) |
+| **Pipeline ticker.** Driven by real `agent_traces` inserts, not a timer. | **Live assembly.** Rows arrive as the pipeline emits them; the subtotal is caught mid-roll at $853.74. |
+| ![Drafted rows dimmed with struck-through totals under a Revising draft banner](docs/screenshots/05-retry-retraction.png) | ![Agent trace listing pipeline nodes with durations and token counts](docs/screenshots/13-agent-trace.png) |
+| **Retry retraction.** Validation rejected the draft, so the UI retracts it in the open rather than hiding the correction. | **Agent trace.** Every node with its real duration and token counts, retry attempts grouped. |
+
+The quoting pipeline is what these show. The capture UI is not pictured: the iOS
+simulator has no camera, so the walkthrough seeds its photos and narration from
+the committed fixtures and runs the real pipeline over them. The capture upload
+path (direct-to-Storage upload, metadata registration, RLS-scoped signed URLs) is
+covered by `mobile/scripts/live-verify.ts`. The capture screen's rendering is not
+covered by a test, and this walkthrough does not prove it.
 
 ## Limitations
 
@@ -196,13 +215,26 @@ Each with its upgrade path.
   capture queue that drains when the connection returns.
 - **Seeded price books, no learning.** Prices come from seeded books and the app
   never invents one. Upgrade path: per-account price-book editing and import.
-- **Backend runs locally, not hosted.** The demo runs FastAPI on the Mac LAN; only
+- **Backend runs locally, not hosted.** The demo runs FastAPI on localhost; only
   the web quote page is hosted (Vercel), reading hosted Supabase directly. Upgrade
   path: containerize and deploy the API (for example Railway or Render) with
   managed transcription.
-- **Android is the same Expo code but demoed on iOS.** No platform-forked screens;
-  the demo is recorded on a physical iPhone. Upgrade path: an Android device pass
-  and a Play listing if distribution is ever pursued.
+- **Neither Android nor a physical iPhone is tested on device.** The same Expo
+  code targets both, with no platform-forked screens, but the walkthrough runs on
+  the iOS simulator and no device pass has been done. Upgrade path: an Android and
+  iPhone device pass, and a Play listing if distribution is ever pursued.
+- **The demo runs on a simulator, so capture media is seeded.** The simulator has
+  no camera and the app has no photo-library fallback, so the walkthrough seeds
+  the committed fixture photos and voice note and then runs the real pipeline over
+  them. Everything downstream of capture is genuine. The capture upload path is
+  covered by `live-verify.ts`, but the capture screen's rendering is not proven by
+  the walkthrough or by any test. Upgrade path: a pass on a physical iPhone, which
+  needs a network that does not isolate clients from each other.
+- **Cross-device realtime sync is verified, not pictured.** Editing a quote on one
+  device updates a second device in under two seconds; that is asserted by
+  `mobile/scripts/live-verify.ts` against live services rather than shown in a
+  screenshot, because two simulators photograph almost identically. Upgrade path:
+  a recorded two-device pass once device testing happens.
 - **Transcription is demo-grade.** faster-whisper `small` locally; a deployed free
   tier would use `base`. Upgrade path: managed transcription for production.
 - **Light theme only.** Single palette. Upgrade path: a dark palette off the
@@ -210,12 +242,15 @@ Each with its upgrade path.
 
 ## Scope and honesty
 
-QuoteLens ships as a portfolio package: this public repository, a recorded demo
-video, and one live hosted web quote sample. It is deliberately not distributed
-through the Apple App Store or Google Play. The backend runs locally for the
-demo; the client quote page is the only hosted surface. There are no paying
+QuoteLens ships as a portfolio package: this public repository, a screenshot
+walkthrough of a real run, and one live hosted web quote sample. It is
+deliberately not distributed through the Apple App Store or Google Play. The
+backend runs locally for the demo; the client quote page is the only hosted
+surface. The walkthrough is captured on the iOS simulator with fixture-seeded
+capture media, so the capture screen is the one part of the app it does not
+show, and no build has been tested on a physical device. There are no paying
 users and no client traction claimed. That is the claim in full: source public,
-demonstrated on video, one live web sample.
+demonstrated in screenshots of a real run, one live web sample.
 
 ## License
 
