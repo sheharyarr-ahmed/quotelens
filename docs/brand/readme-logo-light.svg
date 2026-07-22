@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 220" width="880" height="220">
+  <g transform="translate(110 110) scale(0.72) translate(-120 -120)">
+    <circle cx="120" cy="120" r="100" fill="none" stroke="#0F172A" stroke-width="15" stroke-dasharray="80.285 24.435" transform="rotate(-113 120 120)"></circle>
+    <rect x="74" y="74" width="92" height="11" fill="#0F172A"></rect>
+    <rect x="74" y="98" width="92" height="11" fill="#0F172A"></rect>
+    <rect x="74" y="122" width="64" height="11" fill="#0F172A"></rect>
+    <rect x="74" y="150" width="92" height="17" fill="#208AEF"></rect>
+  </g>
+  <text x="238" y="148" font-size="104" letter-spacing="-2" fill="#0F172A" font-family="Avenir Next, Helvetica Neue, Helvetica, Arial, sans-serif">Quote<tspan font-weight="600">Lens</tspan></text>
+</svg>

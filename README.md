@@ -1,4 +1,18 @@
-# QuoteLens
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/readme-logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/brand/readme-logo-light.png">
+    <img src="docs/brand/readme-logo-light.png" alt="QuoteLens" width="440">
+  </picture>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0F172A" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/tests-75%20passing-208AEF" alt="75 tests passing">
+  <img src="https://img.shields.io/badge/pipeline-7%20nodes-0F172A" alt="Seven-node pipeline">
+</p>
+
+---
 
 AI quoting for trades. Walk a job site, photograph the work area, record a
 spoken walkthrough, and an agent pipeline returns an itemized, evidence-cited
