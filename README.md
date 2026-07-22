@@ -1,10 +1,8 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/readme-logo-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="docs/brand/readme-logo-light.png">
-    <img src="docs/brand/readme-logo-light.png" alt="QuoteLens" width="440">
-  </picture>
+  <img src="docs/brand/readme-icon.png" alt="QuoteLens" width="120">
 </p>
+
+<h1 align="center">QuoteLens</h1>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0F172A" alt="License: MIT"></a>
